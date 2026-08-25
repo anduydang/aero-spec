@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Cpu, Target, SlidersHorizontal, Globe, Sun, Moon, Sparkles, Radio, Bot, Volume2, VolumeX } from 'lucide-react';
+import { Cpu, Target, SlidersHorizontal, Globe, Sparkles, Radio, Bot, Volume2, VolumeX, Palette } from 'lucide-react';
 import type { LanguageType, PersonaType, RigProfileType, ThemeType } from '../types/hardware';
 import { i18nData } from '../data/i18nData';
 import { soundFx } from '../utils/soundFx';
@@ -14,7 +14,7 @@ interface HeaderProps {
   persona: PersonaType;
   rigProfile: RigProfileType;
   onToggleLang: () => void;
-  onToggleTheme: () => void;
+  onSelectTheme: (t: ThemeType) => void;
   onSelectPersona: (p: PersonaType) => void;
   onSelectRig: (r: RigProfileType) => void;
   onOpenFlexCard: () => void;
@@ -30,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   persona,
   rigProfile,
   onToggleLang,
-  onToggleTheme,
+  onSelectTheme,
   onSelectPersona,
   onSelectRig,
   onOpenFlexCard,
@@ -61,6 +61,14 @@ export const Header: React.FC<HeaderProps> = ({
     setIsMuted(nextMuted);
     if (!nextMuted) soundFx.playClick();
   };
+
+  const themeOptions: { id: ThemeType; label_VI: string; label_EN: string; icon: string }[] = [
+    { id: 'arctic', label_VI: 'Băng Tuyết (Arctic)', label_EN: 'Arctic Cleanroom', icon: '❄️' },
+    { id: 'latte', label_VI: 'Cà Phê Sữa (Latte)', label_EN: 'Warm Latte', icon: '☕' },
+    { id: 'matcha', label_VI: 'Trà Xanh (Matcha Zen)', label_EN: 'Matcha Zen', icon: '🍵' },
+    { id: 'sakura', label_VI: 'Hoa Anh Đào (Sakura)', label_EN: 'Sakura Blossom', icon: '🌸' },
+    { id: 'slate', label_VI: 'Đêm Dịu Mắt (Slate Dark)', label_EN: 'Slate Studio', icon: '🌌' },
+  ];
 
   return (
     <header className="studio-card rounded-2xl px-3.5 py-2 flex items-center justify-between gap-2 shrink-0">
@@ -97,7 +105,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Right Controls: Simulator Mode + Persona + Actions */}
+      {/* Right Controls: Simulator Mode + Persona + Theme + Actions */}
       <div className="flex items-center gap-1.5 shrink-0">
         
         {/* Live Rig Simulator Selector */}
@@ -109,13 +117,13 @@ export const Header: React.FC<HeaderProps> = ({
               soundFx.playSwitch();
               onSelectRig(e.target.value as RigProfileType);
             }} 
-            className="bg-transparent text-[10px] font-bold text-sky-600 dark:text-sky-400 focus:outline-none cursor-pointer max-w-[140px] 2xl:max-w-[200px] truncate"
+            className="bg-transparent text-[10px] font-bold text-sky-600 dark:text-sky-400 focus:outline-none cursor-pointer max-w-[130px] 2xl:max-w-[190px] truncate"
           >
             <option value="live" className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white font-bold">
               {lang === 'EN' ? 'LIVE PC: Host WMI' : 'LIVE PC: Máy thật'}
             </option>
             <option value="full" className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white">
-              {lang === 'EN' ? 'SIM: Full 7800X3D + 4070 Ti' : 'GIẢ LẬP: Full 7800X3D + 4070 Ti'}
+              {lang === 'EN' ? 'SIM: Full 7800X3D' : 'GIẢ LẬP: Full 7800X3D'}
             </option>
             <option value="missing" className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white">
               {lang === 'EN' ? 'SIM: Missing Parts' : 'GIẢ LẬP: Khuyết linh kiện'}
@@ -132,12 +140,31 @@ export const Header: React.FC<HeaderProps> = ({
               soundFx.playSwitch();
               onSelectPersona(e.target.value as PersonaType);
             }} 
-            className="bg-transparent text-[10px] font-bold dark:text-sky-300 text-sky-700 focus:outline-none cursor-pointer max-w-[140px] 2xl:max-w-[180px] truncate"
+            className="bg-transparent text-[10px] font-bold dark:text-sky-300 text-sky-700 focus:outline-none cursor-pointer max-w-[130px] 2xl:max-w-[170px] truncate"
           >
-            <option value="dev" className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white">Dev + Docker + 1440p</option>
-            <option value="creator" className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white">4K Creator + Blender</option>
-            <option value="esports" className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white">Esports 240Hz High FPS</option>
-            <option value="silent" className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white">Silent AI Lab LLM</option>
+            <option value="dev" className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white">Dev + Docker</option>
+            <option value="creator" className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white">4K Creator</option>
+            <option value="esports" className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white">Esports 240Hz</option>
+            <option value="silent" className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white">Silent AI Lab</option>
+          </select>
+        </div>
+
+        {/* Theme Palette Switcher Dropdown */}
+        <div className="flex items-center gap-1 dark:bg-slate-900 bg-white border dark:border-slate-800 border-slate-300 px-2 py-1 rounded-xl shadow-sm">
+          <Palette className="w-3 h-3 text-amber-500 shrink-0" />
+          <select
+            value={theme}
+            onChange={(e) => {
+              soundFx.playSwitch();
+              onSelectTheme(e.target.value as ThemeType);
+            }}
+            className="bg-transparent text-[10px] font-bold dark:text-amber-300 text-slate-800 focus:outline-none cursor-pointer"
+          >
+            {themeOptions.map((opt) => (
+              <option key={opt.id} value={opt.id} className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white">
+                {opt.icon} {lang === 'VI' ? opt.label_VI : opt.label_EN}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -173,18 +200,6 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Globe className="w-2.5 h-2.5" />
           <span>{lang}</span>
-        </button>
-
-        {/* Theme Toggle */}
-        <button 
-          onClick={() => {
-            soundFx.playSwitch();
-            onToggleTheme();
-          }} 
-          className="px-2 py-1 rounded-xl dark:bg-slate-800 dark:hover:bg-slate-750 bg-white hover:bg-slate-100 border dark:border-slate-700 border-slate-300 dark:text-amber-400 text-slate-800 flex items-center gap-1 text-[10px] font-bold transition cursor-pointer shadow-sm"
-        >
-          {theme === 'dark' ? <Sun className="w-2.5 h-2.5" /> : <Moon className="w-2.5 h-2.5" />}
-          <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
         </button>
 
         {/* Export Flex Card */}

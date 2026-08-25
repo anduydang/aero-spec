@@ -14,8 +14,8 @@ import { i18nData } from './data/i18nData';
 import { soundFx } from './utils/soundFx';
 
 export function App() {
-  const [theme, setTheme] = useState<ThemeType>('dark');
-  const [lang, setLang] = useState<LanguageType>('VI');
+  const [theme, setTheme] = useState<ThemeType>(() => (localStorage.getItem('aerospec_theme') as ThemeType) || 'arctic');
+  const [lang, setLang] = useState<LanguageType>(() => (localStorage.getItem('aerospec_lang') as LanguageType) || 'VI');
   const [persona, setPersona] = useState<PersonaType>('dev');
   const [rigProfile, setRigProfile] = useState<RigProfileType>('live');
   const [activeInspectorId, setActiveInspectorId] = useState<string | null>(null);
@@ -92,20 +92,29 @@ export function App() {
     fetchNativeTelemetry();
   }, []);
 
+  // Update Theme Classes on Root & LocalStorage
   useEffect(() => {
-    if (theme === 'dark') {
+    document.documentElement.className = '';
+    document.documentElement.classList.add(`theme-${theme}`);
+    if (theme === 'slate') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
+    localStorage.setItem('aerospec_theme', theme);
   }, [theme]);
+
+  // Update Language in LocalStorage
+  useEffect(() => {
+    localStorage.setItem('aerospec_lang', lang);
+  }, [lang]);
 
   const telemetry = rigProfile === 'live' ? liveData : (rigProfile === 'full' ? fullRigTelemetry : missingRigTelemetry);
   const dict = i18nData[lang];
   const currentInsight = dict.personas[rigProfile][persona];
   const activeInspectorItem = activeInspectorId ? getDynamicInspectorItem(activeInspectorId, telemetry, lang, persona) : null;
 
-  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  const handleSelectTheme = (newTheme: ThemeType) => setTheme(newTheme);
   const toggleLang = () => setLang(prev => prev === 'EN' ? 'VI' : 'EN');
 
   const handleInspect = (id: string) => {
@@ -125,7 +134,7 @@ export function App() {
         persona={persona}
         rigProfile={rigProfile}
         onToggleLang={toggleLang}
-        onToggleTheme={toggleTheme}
+        onSelectTheme={handleSelectTheme}
         onSelectPersona={setPersona}
         onSelectRig={setRigProfile}
         onOpenFlexCard={() => setIsFlexCardOpen(true)}

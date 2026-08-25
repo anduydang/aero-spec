@@ -1,7 +1,7 @@
 export type PersonaType = 'dev' | 'creator' | 'esports' | 'silent';
 export type RigProfileType = 'live' | 'full' | 'missing';
 export type LanguageType = 'EN' | 'VI';
-export type ThemeType = 'dark' | 'light';
+export type ThemeType = 'arctic' | 'latte' | 'matcha' | 'sakura' | 'slate';
 
 export interface MicroSpec {
   label: string;

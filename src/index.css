@@ -10,6 +10,7 @@
     text-rendering: optimizeLegibility;
     overscroll-behavior: none;
     user-select: none;
+    transition: background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   code, pre, kbd, samp {
@@ -17,56 +18,109 @@
   }
 }
 
-/* Glassmorphism & Native Desktop Surface Elevation */
+/* ==========================================================================
+   THEME PALETTES (Arctic, Latte, Matcha, Sakura, Slate)
+   ========================================================================== */
+
+/* 1. Theme Arctic (Cleanroom Icy Blue) - Default */
+html.theme-arctic {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+html.theme-arctic .studio-card {
+  background-color: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  box-shadow: 0 4px 20px -2px rgba(100, 116, 139, 0.12), 0 1px 3px 0 rgba(100, 116, 139, 0.06);
+}
+html.theme-arctic .pcb-substrate {
+  background-color: #f8fafc;
+  background-image: 
+    linear-gradient(to right, rgba(203, 213, 225, 0.8) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(203, 213, 225, 0.8) 1px, transparent 1px);
+}
+
+/* 2. Theme Latte (Warm Mac 1984 & Coffee Cream) */
+html.theme-latte {
+  background-color: #f4ece1;
+  color: #2b1d15;
+}
+html.theme-latte .studio-card {
+  background-color: rgba(255, 253, 248, 0.96);
+  border: 1px solid rgba(224, 211, 194, 0.95);
+  box-shadow: 0 4px 20px -2px rgba(120, 95, 75, 0.12), 0 1px 3px 0 rgba(120, 95, 75, 0.06);
+}
+html.theme-latte .pcb-substrate {
+  background-color: #ede2d3;
+  background-image: 
+    linear-gradient(to right, rgba(214, 197, 177, 0.8) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(214, 197, 177, 0.8) 1px, transparent 1px);
+}
+
+/* 3. Theme Matcha (Zen Herb Green) */
+html.theme-matcha {
+  background-color: #e9f2ec;
+  color: #12281e;
+}
+html.theme-matcha .studio-card {
+  background-color: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(193, 217, 203, 0.95);
+  box-shadow: 0 4px 20px -2px rgba(60, 110, 85, 0.12), 0 1px 3px 0 rgba(60, 110, 85, 0.06);
+}
+html.theme-matcha .pcb-substrate {
+  background-color: #dfede4;
+  background-image: 
+    linear-gradient(to right, rgba(184, 215, 196, 0.8) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(184, 215, 196, 0.8) 1px, transparent 1px);
+}
+
+/* 4. Theme Sakura (Pastel Pink Blossom) */
+html.theme-sakura {
+  background-color: #f7eef5;
+  color: #2b1426;
+}
+html.theme-sakura .studio-card {
+  background-color: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(237, 207, 228, 0.95);
+  box-shadow: 0 4px 20px -2px rgba(160, 80, 130, 0.12), 0 1px 3px 0 rgba(160, 80, 130, 0.06);
+}
+html.theme-sakura .pcb-substrate {
+  background-color: #f2dfea;
+  background-image: 
+    linear-gradient(to right, rgba(229, 196, 222, 0.8) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(229, 196, 222, 0.8) 1px, transparent 1px);
+}
+
+/* 5. Theme Slate (Dark Studio / Obsidian) */
+html.theme-slate, html.dark {
+  background-color: #0b1120;
+  color: #f8fafc;
+}
+html.theme-slate .studio-card, html.dark .studio-card {
+  background-color: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(51, 65, 85, 0.75);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.65), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+}
+html.theme-slate .pcb-substrate, html.dark .pcb-substrate {
+  background-color: #070d19;
+  background-image: 
+    linear-gradient(to right, rgba(30, 41, 59, 0.45) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30, 41, 59, 0.45) 1px, transparent 1px);
+}
+
+/* Glassmorphism & Elevation */
 .studio-card {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.dark .studio-card {
-  background-color: rgba(15, 23, 42, 0.88);
-  border: 1px solid rgba(51, 65, 85, 0.75);
-  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.65), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
-}
-
-html:not(.dark) .studio-card {
-  background-color: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(203, 213, 225, 0.95);
-  box-shadow: 0 4px 20px -2px rgba(100, 116, 139, 0.16), 0 2px 6px -1px rgba(100, 116, 139, 0.08);
-}
-
-/* PCB Schematic Grid Substrate */
-.pcb-substrate {
-  position: relative;
-  background-size: 20px 20px;
-}
-
-.dark .pcb-substrate {
-  background-color: #0b1120;
-  background-image: 
-    linear-gradient(to right, rgba(30, 41, 59, 0.45) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(30, 41, 59, 0.45) 1px, transparent 1px);
-}
-
-html:not(.dark) .pcb-substrate {
-  background-color: #f1f5f9;
-  background-image: 
-    linear-gradient(to right, rgba(203, 213, 225, 0.8) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(203, 213, 225, 0.8) 1px, transparent 1px);
-}
-
 /* Tactile 3D Chip Appearance */
 .tactile-chip {
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(100, 116, 139, 0.12), 0 1px 2px rgba(100, 116, 139, 0.06);
 }
-
-.dark .tactile-chip {
+.dark .tactile-chip, html.theme-slate .tactile-chip {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-html:not(.dark) .tactile-chip {
-  box-shadow: 0 3px 10px rgba(100, 116, 139, 0.18), 0 1px 3px rgba(100, 116, 139, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 /* Animated PCB Signal Traces */
@@ -96,20 +150,20 @@ html:not(.dark) .tactile-chip {
   background: transparent;
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 9999px;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #0ea5e9;
-}
-
-html:not(.dark) ::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 9999px;
 }
 
-html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+::-webkit-scrollbar-thumb:hover {
   background: #0284c7;
+}
+
+.dark ::-webkit-scrollbar-thumb, html.theme-slate ::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover, html.theme-slate ::-webkit-scrollbar-thumb:hover {
+  background: #0ea5e9;
 }

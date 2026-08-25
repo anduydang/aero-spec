@@ -66,11 +66,33 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
     const cNvme2 = nvme2El ? getPos(nvme2El) : null;
     const cGpu = getPos(gpuEl);
 
-    const isDark = theme === 'dark';
-    const copperBase = isDark ? '#1e293b' : '#cbd5e1';
-    const cyanBus = isDark ? '#0ea5e9' : '#0284c7';
-    const indigoBus = isDark ? '#6366f1' : '#4338ca';
-    const goldVia = isDark ? '#fbbf24' : '#d97706';
+    const isDark = theme === 'slate';
+    let copperBase = '#cbd5e1';
+    let cyanBus = '#0284c7';
+    let indigoBus = '#4338ca';
+    let goldVia = '#d97706';
+
+    if (theme === 'slate') {
+      copperBase = '#1e293b';
+      cyanBus = '#0ea5e9';
+      indigoBus = '#6366f1';
+      goldVia = '#fbbf24';
+    } else if (theme === 'latte') {
+      copperBase = '#d6c7b5';
+      cyanBus = '#ea580c';
+      indigoBus = '#9a3412';
+      goldVia = '#b45309';
+    } else if (theme === 'matcha') {
+      copperBase = '#b8d7c4';
+      cyanBus = '#059669';
+      indigoBus = '#0d9488';
+      goldVia = '#ca8a04';
+    } else if (theme === 'sakura') {
+      copperBase = '#e5c4de';
+      cyanBus = '#db2777';
+      indigoBus = '#9333ea';
+      goldVia = '#e11d48';
+    }
 
     let svgContent = '';
 
