@@ -10,7 +10,7 @@
     text-rendering: optimizeLegibility;
     overscroll-behavior: none;
     user-select: none;
-    transition: background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   code, pre, kbd, samp {
@@ -19,99 +19,236 @@
 }
 
 /* ==========================================================================
-   THEME PALETTES (Arctic, Latte, Matcha, Sakura, Slate)
+   THEME DESIGN TOKENS (Arctic, Latte, Matcha, Sakura, Slate)
    ========================================================================== */
 
 /* 1. Theme Arctic (Cleanroom Icy Blue) - Default */
-html.theme-arctic {
-  background-color: #f1f5f9;
-  color: #0f172a;
-}
-html.theme-arctic .studio-card {
-  background-color: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(203, 213, 225, 0.95);
-  box-shadow: 0 4px 20px -2px rgba(100, 116, 139, 0.12), 0 1px 3px 0 rgba(100, 116, 139, 0.06);
-}
-html.theme-arctic .pcb-substrate {
-  background-color: #f8fafc;
-  background-image: 
-    linear-gradient(to right, rgba(203, 213, 225, 0.8) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(203, 213, 225, 0.8) 1px, transparent 1px);
+:root, html.theme-arctic {
+  --app-bg: #f1f5f9;
+  --card-bg: rgba(255, 255, 255, 0.94);
+  --card-border: rgba(203, 213, 225, 0.95);
+  --card-shadow: 0 4px 20px -2px rgba(100, 116, 139, 0.12), 0 1px 3px 0 rgba(100, 116, 139, 0.06);
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-sub: #334155;
+  --chip-bg: #f8fafc;
+  --chip-border: #e2e8f0;
+  --primary-accent: #0284c7;
+  --primary-accent-hover: #0369a1;
+  --primary-glow: rgba(2, 132, 199, 0.25);
+  --primary-badge-bg: #e0f2fe;
+  --primary-badge-text: #0369a1;
+  --primary-badge-border: #bae6fd;
+  --secondary-accent: #4f46e5;
+  --secondary-badge-bg: #e0e7ff;
+  --secondary-badge-text: #3730a3;
+  --secondary-badge-border: #c7d2fe;
+  --header-btn-grad: linear-gradient(135deg, #0284c7, #4f46e5);
+  --pcb-bg: #f8fafc;
+  --pcb-grid: rgba(203, 213, 225, 0.8);
+  --socket-bg: rgba(224, 242, 254, 0.85);
+  --socket-border: #38bdf8;
+  --socket-tag: #0284c7;
 }
 
-/* 2. Theme Latte (Warm Mac 1984 & Coffee Cream) */
+/* 2. Theme Latte (Warm Mac 1984 & Coffee Caramel) */
 html.theme-latte {
-  background-color: #f4ece1;
-  color: #2b1d15;
-}
-html.theme-latte .studio-card {
-  background-color: rgba(255, 253, 248, 0.96);
-  border: 1px solid rgba(224, 211, 194, 0.95);
-  box-shadow: 0 4px 20px -2px rgba(120, 95, 75, 0.12), 0 1px 3px 0 rgba(120, 95, 75, 0.06);
-}
-html.theme-latte .pcb-substrate {
-  background-color: #ede2d3;
-  background-image: 
-    linear-gradient(to right, rgba(214, 197, 177, 0.8) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(214, 197, 177, 0.8) 1px, transparent 1px);
+  --app-bg: #f5eee4;
+  --card-bg: rgba(255, 253, 248, 0.97);
+  --card-border: rgba(224, 211, 194, 0.95);
+  --card-shadow: 0 4px 20px -2px rgba(120, 95, 75, 0.14), 0 1px 3px 0 rgba(120, 95, 75, 0.08);
+  --text-main: #332219;
+  --text-muted: #785f4b;
+  --text-sub: #543d30;
+  --chip-bg: #faf4eb;
+  --chip-border: #dfd1be;
+  --primary-accent: #c2410c;
+  --primary-accent-hover: #9a3412;
+  --primary-glow: rgba(194, 65, 12, 0.25);
+  --primary-badge-bg: #ffedd5;
+  --primary-badge-text: #9a3412;
+  --primary-badge-border: #fed7aa;
+  --secondary-accent: #b45309;
+  --secondary-badge-bg: #fef3c7;
+  --secondary-badge-text: #92400e;
+  --secondary-badge-border: #fde68a;
+  --header-btn-grad: linear-gradient(135deg, #ea580c, #b45309);
+  --pcb-bg: #ede2d3;
+  --pcb-grid: rgba(214, 197, 177, 0.8);
+  --socket-bg: rgba(255, 237, 213, 0.85);
+  --socket-border: #fb923c;
+  --socket-tag: #ea580c;
 }
 
-/* 3. Theme Matcha (Zen Herb Green) */
+/* 3. Theme Matcha (Zen Herbal Emerald) */
 html.theme-matcha {
-  background-color: #e9f2ec;
-  color: #12281e;
-}
-html.theme-matcha .studio-card {
-  background-color: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(193, 217, 203, 0.95);
-  box-shadow: 0 4px 20px -2px rgba(60, 110, 85, 0.12), 0 1px 3px 0 rgba(60, 110, 85, 0.06);
-}
-html.theme-matcha .pcb-substrate {
-  background-color: #dfede4;
-  background-image: 
-    linear-gradient(to right, rgba(184, 215, 196, 0.8) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(184, 215, 196, 0.8) 1px, transparent 1px);
+  --app-bg: #eaf2ed;
+  --card-bg: rgba(255, 255, 255, 0.97);
+  --card-border: rgba(193, 217, 203, 0.95);
+  --card-shadow: 0 4px 20px -2px rgba(45, 95, 70, 0.12), 0 1px 3px 0 rgba(45, 95, 70, 0.06);
+  --text-main: #132b20;
+  --text-muted: #527563;
+  --text-sub: #2d4f3e;
+  --chip-bg: #f2f8f4;
+  --chip-border: #cde2d6;
+  --primary-accent: #059669;
+  --primary-accent-hover: #047857;
+  --primary-glow: rgba(5, 150, 105, 0.25);
+  --primary-badge-bg: #d1fae5;
+  --primary-badge-text: #065f46;
+  --primary-badge-border: #a7f3d0;
+  --secondary-accent: #0d9488;
+  --secondary-badge-bg: #ccfbf1;
+  --secondary-badge-text: #115e59;
+  --secondary-badge-border: #99f6e4;
+  --header-btn-grad: linear-gradient(135deg, #059669, #0d9488);
+  --pcb-bg: #dfede4;
+  --pcb-grid: rgba(184, 215, 196, 0.8);
+  --socket-bg: rgba(209, 250, 229, 0.85);
+  --socket-border: #34d399;
+  --socket-tag: #059669;
 }
 
 /* 4. Theme Sakura (Pastel Pink Blossom) */
 html.theme-sakura {
-  background-color: #f7eef5;
-  color: #2b1426;
-}
-html.theme-sakura .studio-card {
-  background-color: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(237, 207, 228, 0.95);
-  box-shadow: 0 4px 20px -2px rgba(160, 80, 130, 0.12), 0 1px 3px 0 rgba(160, 80, 130, 0.06);
-}
-html.theme-sakura .pcb-substrate {
-  background-color: #f2dfea;
-  background-image: 
-    linear-gradient(to right, rgba(229, 196, 222, 0.8) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(229, 196, 222, 0.8) 1px, transparent 1px);
+  --app-bg: #f9eff6;
+  --card-bg: rgba(255, 255, 255, 0.97);
+  --card-border: rgba(237, 207, 228, 0.95);
+  --card-shadow: 0 4px 20px -2px rgba(160, 70, 130, 0.12), 0 1px 3px 0 rgba(160, 70, 130, 0.06);
+  --text-main: #33152c;
+  --text-muted: #7d4d72;
+  --text-sub: #54274c;
+  --chip-bg: #fcf4fa;
+  --chip-border: #f1d4e9;
+  --primary-accent: #e11d48;
+  --primary-accent-hover: #be123c;
+  --primary-glow: rgba(225, 29, 72, 0.25);
+  --primary-badge-bg: #ffe4e6;
+  --primary-badge-text: #9f1239;
+  --primary-badge-border: #fecdd3;
+  --secondary-accent: #9333ea;
+  --secondary-badge-bg: #f3e8ff;
+  --secondary-badge-text: #6b21a8;
+  --secondary-badge-border: #e9d5ff;
+  --header-btn-grad: linear-gradient(135deg, #e11d48, #9333ea);
+  --pcb-bg: #f2dfea;
+  --pcb-grid: rgba(229, 196, 222, 0.8);
+  --socket-bg: rgba(255, 228, 230, 0.85);
+  --socket-border: #fb7185;
+  --socket-tag: #e11d48;
 }
 
-/* 5. Theme Slate (Dark Studio / Obsidian) */
+/* 5. Theme Slate (Dark Cyber Obsidian) */
 html.theme-slate, html.dark {
-  background-color: #0b1120;
-  color: #f8fafc;
-}
-html.theme-slate .studio-card, html.dark .studio-card {
-  background-color: rgba(15, 23, 42, 0.88);
-  border: 1px solid rgba(51, 65, 85, 0.75);
-  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.65), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
-}
-html.theme-slate .pcb-substrate, html.dark .pcb-substrate {
-  background-color: #070d19;
-  background-image: 
-    linear-gradient(to right, rgba(30, 41, 59, 0.45) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(30, 41, 59, 0.45) 1px, transparent 1px);
+  --app-bg: #0b1120;
+  --card-bg: rgba(15, 23, 42, 0.88);
+  --card-border: rgba(51, 65, 85, 0.75);
+  --card-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.65), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-sub: #cbd5e1;
+  --chip-bg: #0f172a;
+  --chip-border: #1e293b;
+  --primary-accent: #0ea5e9;
+  --primary-accent-hover: #38bdf8;
+  --primary-glow: rgba(14, 165, 233, 0.3);
+  --primary-badge-bg: rgba(12, 74, 110, 0.45);
+  --primary-badge-text: #7dd3fc;
+  --primary-badge-border: rgba(56, 189, 248, 0.4);
+  --secondary-accent: #6366f1;
+  --secondary-badge-bg: rgba(49, 46, 129, 0.45);
+  --secondary-badge-text: #a5b4fc;
+  --secondary-badge-border: rgba(129, 140, 248, 0.4);
+  --header-btn-grad: linear-gradient(135deg, #0ea5e9, #6366f1);
+  --pcb-bg: #070d19;
+  --pcb-grid: rgba(30, 41, 59, 0.45);
+  --socket-bg: rgba(12, 74, 110, 0.5);
+  --socket-border: #0ea5e9;
+  --socket-tag: #0284c7;
 }
 
-/* Glassmorphism & Elevation */
+/* Background Application */
+body {
+  background-color: var(--app-bg);
+  color: var(--text-main);
+}
+
+/* Reusable Theme Classes */
 .studio-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-title {
+  color: var(--text-main);
+}
+
+.theme-sub {
+  color: var(--text-sub);
+}
+
+.theme-muted {
+  color: var(--text-muted);
+}
+
+.theme-primary-text {
+  color: var(--primary-accent);
+}
+
+.theme-secondary-text {
+  color: var(--secondary-accent);
+}
+
+.theme-btn-primary {
+  background-color: var(--primary-accent);
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--primary-glow);
+  transition: all 0.15s ease;
+}
+.theme-btn-primary:hover {
+  background-color: var(--primary-accent-hover);
+}
+
+.theme-btn-grad {
+  background: var(--header-btn-grad);
+  color: #ffffff;
+  box-shadow: 0 4px 14px var(--primary-glow);
+  transition: all 0.15s ease;
+}
+
+.theme-badge-primary {
+  background-color: var(--primary-badge-bg);
+  color: var(--primary-badge-text);
+  border: 1px solid var(--primary-badge-border);
+}
+
+.theme-badge-secondary {
+  background-color: var(--secondary-badge-bg);
+  color: var(--secondary-badge-text);
+  border: 1px solid var(--secondary-badge-border);
+}
+
+.theme-chip-box {
+  background-color: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+}
+
+.theme-socket-box {
+  background-color: var(--socket-bg);
+  border: 2px solid var(--socket-border);
+}
+
+.pcb-substrate {
+  position: relative;
+  background-color: var(--pcb-bg);
+  background-image: 
+    linear-gradient(to right, var(--pcb-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--pcb-grid) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 /* Tactile 3D Chip Appearance */
@@ -151,19 +288,10 @@ html.theme-slate .pcb-substrate, html.dark .pcb-substrate {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--card-border);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #0284c7;
-}
-
-.dark ::-webkit-scrollbar-thumb, html.theme-slate ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 9999px;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover, html.theme-slate ::-webkit-scrollbar-thumb:hover {
-  background: #0ea5e9;
+  background: var(--primary-accent);
 }

@@ -66,32 +66,41 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
     const cNvme2 = nvme2El ? getPos(nvme2El) : null;
     const cGpu = getPos(gpuEl);
 
-    const isDark = theme === 'slate';
     let copperBase = '#cbd5e1';
-    let cyanBus = '#0284c7';
-    let indigoBus = '#4338ca';
+    let primaryBus = '#0284c7';
+    let secondaryBus = '#4f46e5';
     let goldVia = '#d97706';
+    let labelBg = '#ffffff';
+    let labelBorder = '#cbd5e1';
 
     if (theme === 'slate') {
       copperBase = '#1e293b';
-      cyanBus = '#0ea5e9';
-      indigoBus = '#6366f1';
+      primaryBus = '#00f0ff';
+      secondaryBus = '#818cf8';
       goldVia = '#fbbf24';
+      labelBg = '#070d19';
+      labelBorder = '#334155';
     } else if (theme === 'latte') {
       copperBase = '#d6c7b5';
-      cyanBus = '#ea580c';
-      indigoBus = '#9a3412';
+      primaryBus = '#ea580c';
+      secondaryBus = '#b45309';
       goldVia = '#b45309';
+      labelBg = '#faf4eb';
+      labelBorder = '#dfd1be';
     } else if (theme === 'matcha') {
       copperBase = '#b8d7c4';
-      cyanBus = '#059669';
-      indigoBus = '#0d9488';
+      primaryBus = '#059669';
+      secondaryBus = '#0d9488';
       goldVia = '#ca8a04';
+      labelBg = '#f2f8f4';
+      labelBorder = '#cde2d6';
     } else if (theme === 'sakura') {
       copperBase = '#e5c4de';
-      cyanBus = '#db2777';
-      indigoBus = '#9333ea';
+      primaryBus = '#e11d48';
+      secondaryBus = '#9333ea';
       goldVia = '#e11d48';
+      labelBg = '#fcf4fa';
+      labelBorder = '#f1d4e9';
     }
 
     let svgContent = '';
@@ -102,7 +111,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
       const y = cCpu.cy + offset * 3.5;
       svgContent += `
         <line x1="${cCpu.right}" y1="${y}" x2="${cRam.left}" y2="${y}" stroke="${copperBase}" stroke-width="2.5" />
-        <line x1="${cCpu.right}" y1="${y}" x2="${cRam.left}" y2="${y}" stroke="${ram.isSingleChannel ? '#f59e0b' : cyanBus}" stroke-width="1.5" class="trace-bus-fast" style="animation-delay: ${idx * 0.2}s" />
+        <line x1="${cCpu.right}" y1="${y}" x2="${cRam.left}" y2="${y}" stroke="${ram.isSingleChannel ? '#f59e0b' : primaryBus}" stroke-width="1.5" class="trace-bus-fast" style="animation-delay: ${idx * 0.2}s" />
         <circle cx="${cCpu.right + 3}" cy="${y}" r="2" fill="${goldVia}" />
         <circle cx="${cRam.left - 3}" cy="${y}" r="2" fill="${goldVia}" />
       `;
@@ -118,7 +127,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
         <path d="M ${sx} ${cCpu.bottom} L ${sx} ${nvme1BendY} L ${tx} ${nvme1BendY} L ${tx} ${cNvme1.top}" 
               fill="none" stroke="${copperBase}" stroke-width="3" />
         <path d="M ${sx} ${cCpu.bottom} L ${sx} ${nvme1BendY} L ${tx} ${nvme1BendY} L ${tx} ${cNvme1.top}" 
-              fill="none" stroke="${cyanBus}" stroke-width="1.5" class="trace-bus" />
+              fill="none" stroke="${primaryBus}" stroke-width="1.5" class="trace-bus" />
         <circle cx="${tx}" cy="${cNvme1.top - 2}" r="2" fill="${goldVia}" />
       `;
     });
@@ -136,7 +145,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
                 fill="none" stroke="${copperBase}" stroke-width="3" opacity="${isPopulated ? '1' : '0.35'}" />
           ${isPopulated ? `
             <path d="M ${sx} ${cCpu.bottom} L ${sx} ${nvme2BendY} L ${tx} ${nvme2BendY} L ${tx} ${cNvme2.top}" 
-                  fill="none" stroke="${cyanBus}" stroke-width="1.5" class="trace-bus" />
+                  fill="none" stroke="${primaryBus}" stroke-width="1.5" class="trace-bus" />
             <circle cx="${tx}" cy="${cNvme2.top - 2}" r="2" fill="${goldVia}" />
           ` : ''}
         `;
@@ -151,7 +160,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
       const isDiscrete = gpu.isDiscrete;
       svgContent += `
         <line x1="${x}" y1="${startY}" x2="${x}" y2="${cGpu.top}" stroke="${copperBase}" stroke-width="2.5" opacity="${isDiscrete ? '1' : '0.4'}" />
-        <line x1="${x}" y1="${startY}" x2="${x}" y2="${cGpu.top}" stroke="${isDiscrete ? indigoBus : cyanBus}" stroke-width="1.5" class="trace-bus-fast" style="animation-delay: ${idx * 0.15}s" />
+        <line x1="${x}" y1="${startY}" x2="${x}" y2="${cGpu.top}" stroke="${isDiscrete ? secondaryBus : primaryBus}" stroke-width="1.5" class="trace-bus-fast" style="animation-delay: ${idx * 0.15}s" />
         <circle cx="${x}" cy="${cGpu.top - 2}" r="2" fill="${goldVia}" opacity="1" />
       `;
     });
@@ -161,8 +170,8 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
 
     svgContent += `
       <g>
-        <rect x="${cCpu.cx - 85}" y="${gpuLabelY - 7}" width="170" height="14" rx="4" fill="${isDark ? '#0b1120' : '#ffffff'}" stroke="${isDark ? '#1e293b' : '#cbd5e1'}" stroke-width="1" />
-        <text x="${cCpu.cx}" y="${gpuLabelY + 3}" fill="${gpu.isDiscrete ? indigoBus : cyanBus}" font-family="Cascadia Code, JetBrains Mono, monospace" font-size="8" font-weight="bold" text-anchor="middle">${gpuLabel}</text>
+        <rect x="${cCpu.cx - 85}" y="${gpuLabelY - 7}" width="170" height="14" rx="4" fill="${labelBg}" stroke="${labelBorder}" stroke-width="1" />
+        <text x="${cCpu.cx}" y="${gpuLabelY + 3.5}" fill="${gpu.isDiscrete ? secondaryBus : primaryBus}" font-family="Cascadia Code, JetBrains Mono, monospace" font-size="8" font-weight="bold" text-anchor="middle">${gpuLabel}</text>
       </g>
     `;
 
@@ -187,26 +196,26 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
         {/* Board Header with BIOS Details */}
         <div 
           onClick={() => onInspect('mainboard')} 
-          className="flex flex-wrap items-center justify-between gap-2 border-b dark:border-slate-800 border-slate-200 pb-2 cursor-pointer group z-10"
+          className="flex flex-wrap items-center justify-between gap-2 border-b border-black/5 dark:border-slate-800 pb-2 cursor-pointer group z-10"
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl dark:bg-slate-900 bg-slate-100 border dark:border-slate-700 border-slate-300 flex items-center justify-center text-sky-500 shadow-sm group-hover:border-sky-500 transition">
+            <div className="w-8 h-8 rounded-xl theme-badge-primary flex items-center justify-center shadow-sm transition">
               <CircuitBoard className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold dark:text-white text-slate-900 group-hover:text-sky-500 transition leading-none">{motherboard.name}</h2>
-                <span className="text-[9px] font-mono font-extrabold px-1.5 py-0.2 dark:bg-emerald-950 dark:text-emerald-300 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded shadow-sm">
+                <h2 className="text-sm font-bold theme-title group-hover:theme-primary-text transition leading-none">{motherboard.name}</h2>
+                <span className="text-[9px] font-mono font-extrabold px-1.5 py-0.2 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 rounded shadow-sm">
                   BIOS: {motherboard.biosVersion}
                 </span>
               </div>
-              <p className="text-[10px] dark:text-slate-400 text-slate-500 font-mono mt-0.5 leading-none">
+              <p className="text-[10px] theme-muted font-mono mt-0.5 leading-none">
                 {motherboard.chipset} • {motherboard.pcbLayers} • Date: {motherboard.biosDate}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 dark:bg-sky-950 dark:text-sky-300 bg-sky-100 text-sky-800 rounded text-[11px] font-mono font-bold flex items-center gap-1 shadow-sm">
+            <span className="px-2 py-0.5 theme-badge-primary rounded text-[11px] font-mono font-bold flex items-center gap-1 shadow-sm">
               <span>Inspect Board & BIOS</span> <ArrowUpRight className="w-2.5 h-2.5" />
             </span>
           </div>
@@ -215,7 +224,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
         {/* Realistic PCB Substrate Canvas */}
         <div 
           ref={areaRef}
-          className="pcb-substrate rounded-2xl p-3 border dark:border-slate-800 border-slate-300 flex-1 flex flex-col justify-between min-h-[360px] gap-2.5 relative shadow-inner"
+          className="pcb-substrate rounded-2xl p-3 border border-black/5 dark:border-slate-800 flex-1 flex flex-col justify-between min-h-[360px] gap-2.5 relative shadow-inner"
         >
           <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none z-0"></svg>
 
@@ -226,19 +235,19 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
             <motion.div 
               whileHover={{ scale: 1.01 }}
               onClick={() => onInspect('vrm')} 
-              className="col-span-4 dark:bg-slate-900 bg-white hover:border-amber-400 transition p-2.5 rounded-xl border dark:border-slate-800 border-slate-300 tactile-chip flex flex-col justify-between cursor-pointer group"
+              className="col-span-4 theme-chip-box hover:border-amber-400 transition p-2.5 rounded-xl tactile-chip flex flex-col justify-between cursor-pointer group"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500 flex items-center gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1">
                     <Shield className="w-3 h-3" /> VRM
                   </span>
                   <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">{motherboard.vrm.tempC} °C</span>
                 </div>
-                <div className="text-[11px] font-bold dark:text-slate-200 text-slate-800 mt-0.5 font-mono">{motherboard.vrm.phases}</div>
+                <div className="text-[11px] font-bold theme-title mt-0.5 font-mono">{motherboard.vrm.phases}</div>
               </div>
 
-              <div className="w-full dark:bg-slate-800 bg-slate-200 h-1.5 rounded-full overflow-hidden mt-1.5">
+              <div className="w-full bg-black/10 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
                 <div className="bg-emerald-500 h-full" style={{ width: `${motherboard.vrm.mosfetLoadPct}%` }}></div>
               </div>
             </motion.div>
@@ -248,14 +257,14 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
               ref={nodeCpuRef}
               whileHover={{ scale: 1.01 }}
               onClick={() => onInspect('cpu')} 
-              className="col-span-4 dark:bg-sky-950/60 bg-sky-100/90 hover:border-sky-500 transition p-2.5 rounded-xl border-2 dark:border-sky-500/70 border-sky-400 tactile-chip flex flex-col items-center justify-center text-center relative group cursor-pointer"
+              className="col-span-4 theme-socket-box transition p-2.5 rounded-xl tactile-chip flex flex-col items-center justify-center text-center relative group cursor-pointer"
             >
-              <div className="absolute -top-2 px-1.5 py-0.2 dark:bg-sky-900 bg-sky-600 text-white rounded text-[8px] font-mono font-extrabold shadow-md">
+              <div className="absolute -top-2 px-1.5 py-0.2 theme-btn-primary rounded text-[8px] font-mono font-extrabold shadow-md">
                 {socketLabel}
               </div>
-              <Cpu className="w-6 h-6 text-sky-500 mb-0.5" />
-              <span className="text-[11px] font-extrabold dark:text-white text-slate-900">{archFamily}</span>
-              <span className="text-[10px] text-sky-700 dark:text-sky-300 font-mono font-bold truncate w-full">{cpu.name}</span>
+              <Cpu className="w-6 h-6 theme-primary-text mb-0.5" />
+              <span className="text-[11px] font-extrabold theme-title">{archFamily}</span>
+              <span className="text-[10px] theme-primary-text font-mono font-bold truncate w-full">{cpu.name}</span>
             </motion.div>
 
             {/* DIMM Slot Bank */}
@@ -263,13 +272,15 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
               ref={nodeRamRef}
               whileHover={{ scale: 1.01 }}
               onClick={() => onInspect('ram')} 
-              className="col-span-4 dark:bg-slate-900 bg-white hover:border-indigo-400 transition p-2 rounded-xl border dark:border-slate-800 border-slate-300 tactile-chip flex flex-col justify-between cursor-pointer group"
+              className="col-span-4 theme-chip-box hover:border-indigo-400 transition p-2 rounded-xl tactile-chip flex flex-col justify-between cursor-pointer group"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-500 flex items-center gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider theme-secondary-text flex items-center gap-1">
                   <Layers className="w-3 h-3" /> DIMM SLOTS
                 </span>
-                <span className={`text-[9px] font-mono font-extrabold px-1 py-0.2 rounded ${ram.isSingleChannel ? 'bg-amber-500/20 text-amber-500' : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'}`}>
+                <span className={`text-[9px] font-mono font-extrabold px-1 py-0.2 rounded ${
+                  ram.isSingleChannel ? 'bg-amber-500/20 text-amber-600' : 'theme-badge-secondary'
+                }`}>
                   {busTypeLabel}
                 </span>
               </div>
@@ -281,8 +292,8 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
                     key={idx}
                     className={`h-10 rounded border flex flex-col items-center justify-between p-0.5 text-[9px] font-mono font-bold ${
                       s.status === 'active' 
-                        ? 'bg-indigo-600 border-indigo-400 shadow text-white' 
-                        : 'dark:bg-slate-950 bg-slate-100 border-dashed dark:border-slate-800 border-slate-300 text-slate-400'
+                        ? 'theme-btn-grad border-transparent shadow text-white' 
+                        : 'bg-black/5 dark:bg-slate-950 border-dashed border-black/15 dark:border-slate-800 theme-muted'
                     }`}
                   >
                     <span>{s.slot}</span>
@@ -302,19 +313,19 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
               ref={nodeNvme1Ref}
               whileHover={{ scale: 1.01 }}
               onClick={() => onInspect('nvme1')} 
-              className="col-span-4 dark:bg-slate-900 bg-white hover:border-sky-400 transition p-2.5 rounded-xl border dark:border-slate-800 border-slate-300 tactile-chip cursor-pointer group"
+              className="col-span-4 theme-chip-box transition p-2.5 rounded-xl tactile-chip cursor-pointer group"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                  <HardDrive className="w-3 h-3 text-sky-500" /> DISK #1
+                <span className="text-[10px] font-bold uppercase tracking-wider theme-muted flex items-center gap-1">
+                  <HardDrive className="w-3 h-3 theme-primary-text" /> DISK #1
                 </span>
                 <span className="text-[8px] font-mono font-bold px-1 py-0.2 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded">
                   ACTIVE
                 </span>
               </div>
-              <h4 className="text-[11px] font-bold dark:text-white text-slate-900 group-hover:text-sky-500 truncate mt-1">{storage.m2_1.name}</h4>
-              <div className="flex justify-between items-center text-[9px] font-mono text-slate-400 mt-1">
-                <span className="text-sky-500 font-bold">{storage.m2_1.speedRead}</span>
+              <h4 className="text-[11px] font-bold theme-title group-hover:theme-primary-text truncate mt-1">{storage.m2_1.name}</h4>
+              <div className="flex justify-between items-center text-[9px] font-mono theme-muted mt-1">
+                <span className="theme-primary-text font-bold">{storage.m2_1.speedRead}</span>
                 <span>{storage.m2_1.tempC} °C</span>
               </div>
             </motion.div>
@@ -326,33 +337,33 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
               onClick={() => onInspect('nvme2')} 
               className={`col-span-4 transition p-2.5 rounded-xl border tactile-chip cursor-pointer group ${
                 storage.m2_2.isPopulated 
-                  ? 'dark:bg-slate-900 bg-white hover:border-sky-400 dark:border-slate-800 border-slate-300' 
-                  : 'dark:bg-slate-950/40 bg-slate-100/60 border-dashed dark:border-slate-800 border-slate-300 opacity-75'
+                  ? 'theme-chip-box' 
+                  : 'bg-black/5 dark:bg-slate-950/40 border-dashed border-black/15 dark:border-slate-800 opacity-75'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                  <HardDrive className="w-3 h-3 text-indigo-500" /> DISK #2
+                <span className="text-[10px] font-bold uppercase tracking-wider theme-muted flex items-center gap-1">
+                  <HardDrive className="w-3 h-3 theme-secondary-text" /> DISK #2
                 </span>
                 <span className={`text-[8px] font-mono font-bold px-1 py-0.2 rounded ${
-                  storage.m2_2.isPopulated ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-slate-700 text-slate-300'
+                  storage.m2_2.isPopulated ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-black/10 dark:bg-slate-700 theme-muted'
                 }`}>
                   {storage.m2_2.isPopulated ? 'ACTIVE' : 'EMPTY'}
                 </span>
               </div>
-              <h4 className="text-[11px] font-bold dark:text-white text-slate-900 group-hover:text-sky-500 truncate mt-1">
+              <h4 className="text-[11px] font-bold theme-title group-hover:theme-secondary-text truncate mt-1">
                 {storage.m2_2.isPopulated ? storage.m2_2.name : 'Secondary Storage Bay'}
               </h4>
-              <div className="flex justify-between items-center text-[9px] font-mono text-slate-400 mt-1">
-                <span className="text-indigo-500 font-bold">{storage.m2_2.speedRead}</span>
+              <div className="flex justify-between items-center text-[9px] font-mono theme-muted mt-1">
+                <span className="theme-secondary-text font-bold">{storage.m2_2.speedRead}</span>
                 <span>{storage.m2_2.isPopulated ? `${storage.m2_2.tempC} °C` : '--'}</span>
               </div>
             </motion.div>
 
             {/* Storage Bay #3 */}
-            <div className="col-span-4 dark:bg-slate-950/40 bg-slate-100/60 border-dashed dark:border-slate-800 border-slate-300 rounded-xl border p-2.5 flex flex-col justify-center items-center text-center opacity-60">
-              <span className="text-[10px] font-bold text-slate-400">Storage Bay #3</span>
-              <span className="text-[8px] text-slate-500 font-mono">[Available for Upgrade]</span>
+            <div className="col-span-4 bg-black/5 dark:bg-slate-950/40 border-dashed border-black/15 dark:border-slate-800 rounded-xl border p-2.5 flex flex-col justify-center items-center text-center opacity-60">
+              <span className="text-[10px] font-bold theme-muted">Storage Bay #3</span>
+              <span className="text-[8px] theme-muted font-mono">[Available for Upgrade]</span>
             </div>
 
           </div>
@@ -362,29 +373,29 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
             ref={nodeGpuRef}
             whileHover={{ scale: 1.005 }}
             onClick={() => onInspect('gpu')} 
-            className="z-10 dark:bg-slate-900 bg-white hover:border-indigo-400 transition p-2.5 rounded-xl border dark:border-slate-800 border-slate-300 tactile-chip flex flex-wrap items-center justify-between gap-2 cursor-pointer group"
+            className="z-10 theme-chip-box transition p-2.5 rounded-xl tactile-chip flex flex-wrap items-center justify-between gap-2 cursor-pointer group"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0">
+              <div className="w-7 h-7 rounded-lg theme-badge-secondary flex items-center justify-center shrink-0">
                 <Monitor className="w-4 h-4" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">
+                  <span className="text-[10px] font-bold uppercase tracking-wider theme-secondary-text">
                     {gpu.isDiscrete ? 'DISCRETE GRAPHICS ENGINE' : 'INTEGRATED GRAPHICS ENGINE'}
                   </span>
-                  <span className="text-[9px] font-mono px-1 py-0.2 rounded dark:bg-slate-800 bg-slate-100 text-slate-400 font-bold">
+                  <span className="text-[9px] font-mono px-1 py-0.2 rounded theme-chip-box theme-muted font-bold">
                     {gpu.pcieLink}
                   </span>
                 </div>
-                <h4 className="text-xs font-bold dark:text-white text-slate-900 group-hover:text-indigo-500 truncate">{gpu.name}</h4>
-                <p className="text-[10px] font-mono text-slate-400 mt-0.5">
+                <h4 className="text-xs font-bold theme-title group-hover:theme-secondary-text truncate">{gpu.name}</h4>
+                <p className="text-[10px] font-mono theme-muted mt-0.5">
                   {gpu.vram} • {gpu.busWidth} • {gpu.tempC} °C
                 </p>
               </div>
             </div>
 
-            <span className="px-2 py-0.5 dark:bg-indigo-950 dark:text-indigo-300 bg-indigo-100 text-indigo-800 rounded text-[10px] font-mono font-bold">
+            <span className="px-2 py-0.5 theme-badge-secondary rounded text-[10px] font-mono font-bold">
               Inspect {gpu.isDiscrete ? 'GPU' : 'iGPU'} ↗
             </span>
           </motion.div>
