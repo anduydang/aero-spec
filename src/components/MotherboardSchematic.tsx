@@ -157,7 +157,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
     <section className="col-span-12 xl:col-span-6 flex flex-col gap-4">
       <div className="studio-card rounded-2xl p-4 sm:p-5 flex flex-col gap-4 flex-1 relative overflow-hidden">
         
-        {/* Board Header */}
+        {/* Board Header with BIOS Details */}
         <div 
           onClick={() => onInspect('mainboard')} 
           className="flex flex-wrap items-center justify-between gap-3 border-b dark:border-slate-800 border-slate-200 pb-3 cursor-pointer group z-10"
@@ -167,13 +167,20 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
               <CircuitBoard className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold dark:text-white text-slate-900 group-hover:text-sky-500 transition">{motherboard.name}</h2>
-              <p className="text-xs dark:text-slate-400 text-slate-500 font-mono">{motherboard.chipset} • {motherboard.pcbLayers}</p>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold dark:text-white text-slate-900 group-hover:text-sky-500 transition">{motherboard.name}</h2>
+                <span className="text-[10px] font-mono font-extrabold px-2 py-0.2 dark:bg-emerald-950 dark:text-emerald-300 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded shadow-sm">
+                  BIOS: {motherboard.biosVersion}
+                </span>
+              </div>
+              <p className="text-xs dark:text-slate-400 text-slate-500 font-mono">
+                {motherboard.chipset} • {motherboard.pcbLayers} • Date: {motherboard.biosDate}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-1 dark:bg-sky-950 dark:text-sky-300 bg-sky-100 text-sky-800 rounded-lg text-xs font-mono font-bold flex items-center gap-1 shadow-sm">
-              <span>Inspect Board</span> <ArrowUpRight className="w-3 h-3" />
+              <span>Inspect Board & BIOS</span> <ArrowUpRight className="w-3 h-3" />
             </span>
           </div>
         </div>

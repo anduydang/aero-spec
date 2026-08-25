@@ -16,6 +16,7 @@ interface HeaderProps {
   onToggleTheme: () => void;
   onSelectPersona: (p: PersonaType) => void;
   onSelectRig: (r: RigProfileType) => void;
+  onOpenFlexCard: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -30,17 +31,18 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme,
   onSelectPersona,
   onSelectRig,
+  onOpenFlexCard,
 }) => {
   const dict = i18nData[lang];
 
-  const handleExport = () => {
+  const handleExportClick = () => {
     confetti({
-      particleCount: 80,
-      spread: 70,
-      origin: { y: 0.2 },
+      particleCount: 60,
+      spread: 60,
+      origin: { y: 0.15 },
       colors: ['#0ea5e9', '#6366f1', '#10b981', '#f59e0b']
     });
-    alert(lang === 'EN' ? 'AeroSpec Flex Card generated! Telemetry snapshot ready for sharing.' : 'Đã tạo Thẻ Flex AeroSpec! Ảnh thông số phần cứng sẵn sàng để chia sẻ.');
+    onOpenFlexCard();
   };
 
   return (
@@ -141,7 +143,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         <button 
-          onClick={handleExport}
+          onClick={handleExportClick}
           className="px-3.5 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs flex items-center gap-1.5 transition duration-150 cursor-pointer shadow-md shadow-sky-500/25"
         >
           <Sparkles className="w-3.5 h-3.5" /> <span>{dict.exportBtn}</span>

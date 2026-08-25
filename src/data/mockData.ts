@@ -1,6 +1,6 @@
 import type { HardwareTelemetryState, InspectorItem } from '../types/hardware';
 
-// 1. LIVE PC TELEMETRY (Populated with real host hardware: Intel Core i5-8400 + Dell MB + 16GB Dual-CH + Intel UHD 630 + Intel SSD + Toshiba HDD)
+// 1. LIVE PC TELEMETRY
 export const liveRigTelemetry: HardwareTelemetryState = {
   hostName: "DESKTOP-VNPT-WORK",
   uptime: "02h 45m",
@@ -44,8 +44,10 @@ export const liveRigTelemetry: HardwareTelemetryState = {
     name: "Dell Inc. 0D02VH (Version A01)",
     chipset: "Intel B360 / Q370 Express",
     pcbLayers: "4-Layer Industrial PCB",
-    agesaVersion: "Dell BIOS 1.14.0",
-    biosDate: "2024-03-12",
+    agesaVersion: "Dell Inc. UEFI 2.18.0",
+    biosVendor: "Dell Inc.",
+    biosVersion: "2.18.0",
+    biosDate: "2021-06-17",
     vrm: {
       phases: "4+1 Phase Discrete MOSFET",
       spsAmp: "45A Low-RDSon MOSFETs",
@@ -193,6 +195,8 @@ export const fullRigTelemetry: HardwareTelemetryState = {
     chipset: "AMD B650 Promontory 21",
     pcbLayers: "6-Layer 2oz Server-Grade",
     agesaVersion: "AGESA 1.2.0.2",
+    biosVendor: "MSI / AMI UEFI",
+    biosVersion: "7D78v1J",
     biosDate: "2025-09-18",
     vrm: {
       phases: "14+2+1 Duet Stages",
@@ -356,8 +360,25 @@ export const missingRigTelemetry: HardwareTelemetryState = {
   ]
 };
 
-// Inspector database for micro-spec and AI verdicts
+// Inspector database
 export const inspectorDatabase: Record<string, InspectorItem> = {
+  mainboard: {
+    id: "mainboard",
+    title: "Motherboard & BIOS Firmware",
+    badge: "UEFI FIRMWARE & VRM ROUTING",
+    icon: "circuit-board",
+    aiScore: "FIRMWARE: VERIFIED",
+    aiText_EN: "System BIOS firmware and SMBIOS table registers are loaded securely in UEFI mode. Power distribution traces maintain clean signal integrity.",
+    aiText_VI: "Firmware BIOS và bảng thanh ghi SMBIOS đã được tải bảo mật ở chế độ UEFI. Các đường mạch cấp nguồn VRM và bus PCIe duy trì độ ổn định cao.",
+    specs: [
+      { label: "BIOS Version", val: "SMBIOS 2.18.0 / UEFI" },
+      { label: "Firmware Release", val: "2021-06-17 (Stable Release)" },
+      { label: "PCIe Link Protocol", val: "PCIe Gen 3.0 / Direct CPU Link" },
+      { label: "Power Delivery", val: "Regulated Multi-Phase VRM" }
+    ],
+    arch_EN: "Industrial-grade PCB substrate with multi-rail power distribution and UEFI firmware security.",
+    arch_VI: "Bo mạch chủ công nghiệp tích hợp mạch cấp nguồn nhiều phase và firmware UEFI bảo mật."
+  },
   cpu: {
     id: "cpu",
     title: "Processor Engine Micro-Architecture",
@@ -389,21 +410,6 @@ export const inspectorDatabase: Record<string, InspectorItem> = {
     ],
     arch_EN: "Synchronous memory bus interface delivering high throughput for multitasking.",
     arch_VI: "Giao tiếp bus bộ nhớ đồng bộ mang lại băng thông ổn định cho các tác vụ đa nhiệm."
-  },
-  mainboard: {
-    id: "mainboard",
-    title: "Motherboard & Chipset Controller",
-    badge: "SYSTEM BUS & VRM ROUTING",
-    icon: "circuit-board",
-    aiScore: "SYSTEM BOARD: STABLE",
-    aiText_EN: "Motherboard power distribution and PCIe bus trace integrity verified stable.",
-    aiText_VI: "Hệ thống cấp nguồn bo mạch chủ và các đường truyền bus PCIe duy trì độ ổn định cao.",
-    specs: [
-      { label: "PCIe Bus Link", val: "Direct CPU + PCH Expansion" },
-      { label: "Power Delivery", val: "Regulated Multi-Phase VRM" }
-    ],
-    arch_EN: "Industrial-grade PCB substrate ensuring reliable interconnect routing.",
-    arch_VI: "Mạch in PCB nhiều lớp đảm bảo đường truyền tín hiệu sạch và độ bền cao."
   },
   gpu: {
     id: "gpu",

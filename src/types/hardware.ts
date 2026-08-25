@@ -70,6 +70,8 @@ export interface HardwareTelemetryState {
     chipset: string;
     pcbLayers: string;
     agesaVersion: string;
+    biosVendor?: string;
+    biosVersion: string;
     biosDate: string;
     vrm: {
       phases: string;

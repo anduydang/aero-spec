@@ -5,6 +5,7 @@ import { MotherboardSchematic } from './components/MotherboardSchematic';
 import { PsuAndPeripherals } from './components/PsuAndPeripherals';
 import { CopilotFooter } from './components/CopilotFooter';
 import { DeepInspectorDrawer } from './components/DeepInspectorDrawer';
+import { FlexCardModal } from './components/FlexCardModal';
 import type { LanguageType, PersonaType, RigProfileType, ThemeType, HardwareTelemetryState } from './types/hardware';
 import { liveRigTelemetry, fullRigTelemetry, missingRigTelemetry, inspectorDatabase } from './data/mockData';
 import { i18nData } from './data/i18nData';
@@ -15,6 +16,7 @@ export function App() {
   const [persona, setPersona] = useState<PersonaType>('dev');
   const [rigProfile, setRigProfile] = useState<RigProfileType>('live');
   const [activeInspectorId, setActiveInspectorId] = useState<string | null>(null);
+  const [isFlexCardOpen, setIsFlexCardOpen] = useState<boolean>(false);
   const [liveData, setLiveData] = useState<HardwareTelemetryState>(liveRigTelemetry);
 
   // Attempt to invoke native Tauri hardware detection if running in Tauri
@@ -54,6 +56,9 @@ export function App() {
               motherboard: {
                 ...prev.motherboard,
                 name: `${res.motherboard.manufacturer} ${res.motherboard.model}` || prev.motherboard.name,
+                biosVendor: res.motherboard.bios_vendor || prev.motherboard.biosVendor,
+                biosVersion: res.motherboard.bios_version || prev.motherboard.biosVersion,
+                biosDate: res.motherboard.bios_date || prev.motherboard.biosDate,
               },
               gpu: {
                 ...prev.gpu,
@@ -114,6 +119,7 @@ export function App() {
         onToggleTheme={toggleTheme}
         onSelectPersona={setPersona}
         onSelectRig={setRigProfile}
+        onOpenFlexCard={() => setIsFlexCardOpen(true)}
       />
 
       {/* 3-Column Core Telemetry Dashboard */}
@@ -156,6 +162,15 @@ export function App() {
         lowLevelTitle={dict.lowLevelTitle}
         archTitle={dict.archTitle}
         onClose={() => setActiveInspectorId(null)}
+      />
+
+      {/* Holographic Flex Card Export Preview Modal */}
+      <FlexCardModal 
+        isOpen={isFlexCardOpen}
+        telemetry={telemetry}
+        lang={lang}
+        persona={persona}
+        onClose={() => setIsFlexCardOpen(false)}
       />
     </div>
   );

@@ -42,6 +42,9 @@ pub struct LiveBoardInfo {
     pub manufacturer: String,
     pub model: String,
     pub version: String,
+    pub bios_vendor: String,
+    pub bios_version: String,
+    pub bios_date: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -95,10 +98,11 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
     let wmi_script = r#"
         $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1 Name, MaxClockSpeed | ConvertTo-Json -Compress
         $board = Get-CimInstance Win32_BaseBoard | Select-Object -First 1 Manufacturer, Product, Version | ConvertTo-Json -Compress
+        $bios = Get-CimInstance Win32_BIOS | Select-Object -First 1 Manufacturer, SMBIOSBIOSVersion, ReleaseDate | ConvertTo-Json -Compress
         $ram = Get-CimInstance Win32_PhysicalMemory | Select-Object Capacity, Speed, ConfiguredClockSpeed, DeviceLocator, Manufacturer, PartNumber | ConvertTo-Json -Compress
         $gpu = Get-CimInstance Win32_VideoController | Select-Object -First 1 Name, AdapterRAM, DriverVersion | ConvertTo-Json -Compress
         $disks = Get-CimInstance Win32_DiskDrive | Select-Object Model, Size, MediaType | ConvertTo-Json -Compress
-        "---CPU---`n$cpu`n---BOARD---`n$board`n---RAM---`n$ram`n---GPU---`n$gpu`n---DISKS---`n$disks"
+        "---CPU---`n$cpu`n---BOARD---`n$board`n---BIOS---`n$bios`n---RAM---`n$ram`n---GPU---`n$gpu`n---DISKS---`n$disks"
     "#;
 
     let output = Command::new("powershell")
@@ -109,6 +113,9 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
     let mut board_mfg = "Dell Inc.".to_string();
     let mut board_model = "0D02VH".to_string();
     let mut board_ver = "A01".to_string();
+    let mut bios_vendor = "Dell Inc.".to_string();
+    let mut bios_ver = "2.18.0".to_string();
+    let mut bios_date = "2021-06-17".to_string();
     let mut gpu_name = "Intel(R) UHD Graphics 630".to_string();
     let mut gpu_vram_mb = 1024;
     let mut gpu_driver = "".to_string();
@@ -141,6 +148,16 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
                     }
                     if let Some(ver) = v.get("Version").and_then(|v| v.as_str()) {
                         board_ver = ver.trim().to_string();
+                    }
+                }
+            } else if s.starts_with("BIOS") && i + 1 < sections.len() {
+                let json_str = sections[i + 1].trim();
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(json_str) {
+                    if let Some(m) = v.get("Manufacturer").and_then(|m| m.as_str()) {
+                        bios_vendor = m.trim().to_string();
+                    }
+                    if let Some(bv) = v.get("SMBIOSBIOSVersion").and_then(|bv| bv.as_str()) {
+                        bios_ver = bv.trim().to_string();
                     }
                 }
             } else if s.starts_with("RAM") && i + 1 < sections.len() {
@@ -244,6 +261,9 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
             manufacturer: board_mfg,
             model: board_model,
             version: board_ver,
+            bios_vendor,
+            bios_version: bios_ver,
+            bios_date,
         },
         gpu: LiveGpuInfo {
             name: gpu_name,
