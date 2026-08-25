@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Send, Bot, Globe, Key, Sparkles, RefreshCw, Cpu, Zap, ShieldCheck } from 'lucide-react';
 import type { HardwareTelemetryState, LanguageType } from '../types/hardware';
 import { soundFx } from '../utils/soundFx';
+import { MarkdownRenderer } from './MarkdownRenderer';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Message {
@@ -9,7 +10,6 @@ interface Message {
   sender: 'user' | 'ai';
   text: string;
   timestamp: string;
-  sources?: { title: string; url: string }[];
   isError?: boolean;
 }
 
@@ -122,7 +122,7 @@ Current User Hardware Telemetry:
 - Power Supply (PSU): ${telemetry.psu.name} (${telemetry.psu.ratedWattage}W Rated, Current Load: ${telemetry.psu.currentLoadW}W)
 
 Answer the user question in ${lang === 'VI' ? 'Vietnamese' : 'English'}.
-Analyze hardware compatibility constraints (e.g. Dell 260W PSU lacks 8-pin PCIe power cables, PCIe slot 75W power limit, LGA 1151v2 socket limits, DDR4/DDR5 DIMM slots) and provide concrete, actionable upgrade recommendations with estimated prices (in VND or USD).`;
+Analyze hardware compatibility constraints (e.g. Dell 260W PSU lacks 8-pin PCIe power cables, PCIe slot 75W power limit, LGA 1151v2 socket limits, DDR4/DDR5 DIMM slots) and provide concrete, actionable upgrade recommendations with estimated prices (in VND or USD). Format your response with clear Markdown headers, bold highlights, bullet points, and pricing comparison tables where helpful.`;
 
     // Cascade top flagship models first (Gemini 3.7 Flash -> 3.5 Flash -> 3.1 Flash Lite -> 3.5 Flash Lite -> Flash Latest)
     const candidateModels = [
@@ -238,7 +238,7 @@ Analyze hardware compatibility constraints (e.g. Dell 260W PSU lacks 8-pin PCIe 
                       : 'bg-amber-950 text-amber-300 border-amber-700/60'
                   }`}>
                     <Globe className="w-3 h-3" />
-                    {apiKey ? 'Gemini 3.5 Active' : 'API Key Required'}
+                    {apiKey ? 'Gemini 3.5 / 3.7 Active' : 'API Key Required'}
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 font-mono mt-0.5">
@@ -321,7 +321,7 @@ Analyze hardware compatibility constraints (e.g. Dell 260W PSU lacks 8-pin PCIe 
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex gap-3 max-w-[85%] ${
+                className={`flex gap-3 max-w-[88%] ${
                   msg.sender === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto'
                 }`}
               >
@@ -336,11 +336,9 @@ Analyze hardware compatibility constraints (e.g. Dell 260W PSU lacks 8-pin PCIe 
                     ? 'bg-sky-600 text-white rounded-tr-none'
                     : (msg.isError ? 'bg-amber-950/60 border border-amber-800 text-amber-200 rounded-tl-none' : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none shadow-lg')
                 }`}>
-                  <div className="text-xs leading-relaxed whitespace-pre-wrap font-sans">
-                    {msg.text}
-                  </div>
+                  <MarkdownRenderer content={msg.text} />
 
-                  <span className={`text-[10px] font-mono mt-0.5 ${msg.sender === 'user' ? 'text-sky-200 text-right' : 'text-slate-500'}`}>
+                  <span className={`text-[10px] font-mono mt-1 ${msg.sender === 'user' ? 'text-sky-200 text-right' : 'text-slate-500'}`}>
                     {msg.timestamp}
                   </span>
                 </div>
