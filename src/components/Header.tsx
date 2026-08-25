@@ -23,6 +23,7 @@ import type {
 } from '../types/hardware'
 import { i18nData } from '../data/i18nData'
 import { soundFx } from '../utils/soundFx'
+import { ThemePicker } from './ThemePicker'
 
 interface HeaderProps {
   hostName: string
@@ -39,14 +40,6 @@ interface HeaderProps {
   onOpenFlexCard: () => void
   onOpenAiAdvisor: () => void
 }
-
-const themeOptions: { id: ThemeType; labelVI: string; labelEN: string; icon: string }[] = [
-  { id: 'arctic', labelVI: 'Băng tuyết', labelEN: 'Arctic Cleanroom', icon: '❄️' },
-  { id: 'latte', labelVI: 'Cà phê sữa', labelEN: 'Warm Latte', icon: '☕' },
-  { id: 'matcha', labelVI: 'Trà xanh', labelEN: 'Matcha Zen', icon: '🍵' },
-  { id: 'sakura', labelVI: 'Hoa anh đào', labelEN: 'Sakura Blossom', icon: '🌸' },
-  { id: 'slate', labelVI: 'Đêm dịu mắt', labelEN: 'Slate Studio', icon: '🌌' },
-]
 
 function getStatusCopy(metadata: TelemetryMetadata, lang: LanguageType) {
   if (metadata.mode === 'simulated') {
@@ -224,26 +217,19 @@ export const Header: React.FC<HeaderProps> = ({
               id="app-settings-popover"
               role="group"
               aria-label="Display and app settings"
-              className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 studio-card rounded-2xl p-3 flex flex-col gap-3 shadow-2xl"
+              className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-80 max-w-[calc(100vw-2rem)] studio-card rounded-2xl p-3 flex flex-col gap-3 shadow-2xl"
             >
-              <label className="flex flex-col gap-1 text-xs font-bold theme-title">
+              <div className="flex flex-col gap-2 text-xs font-bold theme-title">
                 <span className="flex items-center gap-1.5"><Palette className="w-3.5 h-3.5 text-amber-500" /> Theme</span>
-                <select
-                  aria-label="Theme"
-                  value={theme}
-                  onChange={(event) => {
+                <ThemePicker
+                  theme={theme}
+                  lang={lang}
+                  onSelectTheme={(nextTheme) => {
                     soundFx.playSwitch()
-                    onSelectTheme(event.target.value as ThemeType)
+                    onSelectTheme(nextTheme)
                   }}
-                  className="theme-chip-box rounded-xl px-2.5 py-2 text-xs theme-title cursor-pointer"
-                >
-                  {themeOptions.map((option) => (
-                    <option key={option.id} value={option.id} className="bg-slate-900 text-white">
-                      {option.icon} {lang === 'VI' ? option.labelVI : option.labelEN}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                />
+              </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <button

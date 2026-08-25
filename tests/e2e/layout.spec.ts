@@ -28,7 +28,7 @@ test('keeps secondary controls in a settings popover', async ({ page }) => {
   await expect(page.getByRole('group', { name: 'Display and app settings' })).toHaveCount(0)
   await settingsButton.click()
   await expect(page.getByRole('group', { name: 'Display and app settings' })).toBeVisible()
-  await expect(page.getByLabel('Theme')).toBeVisible()
+  await expect(page.getByRole('radiogroup', { name: 'Theme' })).toBeVisible()
   await expect(page.getByRole('button', { name: /language/i })).toBeVisible()
   await expect(page.getByRole('button', { name: /sound/i })).toBeVisible()
 })
