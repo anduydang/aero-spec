@@ -10,7 +10,7 @@ interface Message {
   text: string;
   timestamp: string;
   sources?: { title: string; url: string }[];
-  isGrounding?: boolean;
+  isError?: boolean;
 }
 
 interface AiAdvisorModalProps {
@@ -41,8 +41,8 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
           id: 'welcome',
           sender: 'ai',
           text: lang === 'EN'
-            ? `Hello! I am your AeroSpec AI Hardware Upgrade Consultant. I have analyzed your system (**${telemetry.hostName}** with ${telemetry.cpu.name}, ${telemetry.ram.totalGb}GB ${telemetry.ram.channelMode}, ${telemetry.motherboard.name}, ${telemetry.psu.name} ${telemetry.psu.ratedWattage}W). How can I help optimize your build?`
-            : `Xin chào! Tôi là Trợ lý AI Tư Vấn Nâng Cấp Phần Cứng AeroSpec. Tôi đã nạp toàn bộ cấu hình máy của bạn (**${telemetry.hostName}**: CPU ${telemetry.cpu.name}, RAM ${telemetry.ram.totalGb}GB ${telemetry.ram.channelMode}, Mainboard ${telemetry.motherboard.name}, Nguồn ${telemetry.psu.name} ${telemetry.psu.ratedWattage}W). Bạn muốn nâng cấp với ngân sách bao nhiêu hoặc cần tư vấn linh kiện nào?`,
+            ? `Hello! I am your AeroSpec AI Hardware Upgrade Consultant. I have loaded your system telemetry (**${telemetry.hostName}** with ${telemetry.cpu.name}, ${telemetry.ram.totalGb}GB ${telemetry.ram.channelMode}, ${telemetry.motherboard.name}, ${telemetry.psu.name} ${telemetry.psu.ratedWattage}W).\n\nConnect your Gemini API Key using the button above to ask real-time upgrade questions and analyze market compatibility!`
+            : `Xin chào! Tôi là Trợ lý AI Tư Vấn Nâng Cấp Phần Cứng AeroSpec. Tôi đã nạp toàn bộ cấu hình máy của bạn (**${telemetry.hostName}**: CPU ${telemetry.cpu.name}, RAM ${telemetry.ram.totalGb}GB ${telemetry.ram.channelMode}, Mainboard ${telemetry.motherboard.name}, Nguồn ${telemetry.psu.name} ${telemetry.psu.ratedWattage}W).\n\nHãy kết nối Gemini API Key ở góc trên để bắt đầu trò chuyện trực tiếp với AI thật và tra cứu giá nâng cấp phần cứng!`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
@@ -56,15 +56,16 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
   if (!isOpen) return null;
 
   const saveApiKey = (key: string) => {
-    setApiKey(key);
-    localStorage.setItem('aerospec_gemini_key', key);
+    const trimmed = key.trim();
+    setApiKey(trimmed);
+    localStorage.setItem('aerospec_gemini_key', trimmed);
     setShowKeyInput(false);
     soundFx.playChime();
   };
 
   const quickQuestions = lang === 'EN' ? [
     "What should I upgrade with a $100 budget?",
-    "Can my power supply support an RTX 3050?",
+    "Can my 260W power supply support a GTX 1650 or RTX 3050?",
     "Should I upgrade to 32GB RAM or add an NVMe SSD?",
     "What is the best low-power GPU for this PC?"
   ] : [
@@ -88,12 +89,28 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
 
     setMessages(prev => [...prev, userMsg]);
     if (!queryText) setInputMessage('');
+
+    // Check if API Key is configured
+    if (!apiKey.trim()) {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          sender: 'ai',
+          text: lang === 'EN'
+            ? 'Gemini API Key is not connected yet. Please click the "Connect API Key" button at the top and paste your Google Gemini API Key to chat with the real AI!'
+            : 'Chưa kết nối Gemini API Key. Vui lòng bấm nút "Connect API Key" ở góc trên bên phải và dán mã API Key của bạn để trò chuyện trực tiếp với AI thật!',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isError: true
+        }
+      ]);
+      setShowKeyInput(true);
+      return;
+    }
+
     setIsLoading(true);
 
-    // Call live Gemini 2.0 / 1.5 Flash with Google Search Grounding if API key provided
-    if (apiKey.trim()) {
-      try {
-        const systemPrompt = `You are AeroSpec Pro AI - a senior PC hardware architecture & upgrade consultant.
+    const systemPrompt = `You are AeroSpec Pro AI - a senior PC hardware architecture & upgrade consultant.
 Current User Hardware Telemetry:
 - Host: ${telemetry.hostName}
 - CPU: ${telemetry.cpu.name} (${telemetry.cpu.cores}C/${telemetry.cpu.threads}T, Clock: ${telemetry.cpu.avgClockMhz}MHz)
@@ -105,144 +122,70 @@ Current User Hardware Telemetry:
 - Power Supply (PSU): ${telemetry.psu.name} (${telemetry.psu.ratedWattage}W Rated, Current Load: ${telemetry.psu.currentLoadW}W)
 
 Answer the user question in ${lang === 'VI' ? 'Vietnamese' : 'English'}.
-Search the web for real current market prices (in VND or USD), compatibility constraints (e.g. proprietary OEM PSU limitations, PCIe power connectors, PCIe x16 slot limits, DIMM DDR4/DDR5 compatibility), and provide actionable, honest advice with clear price ranges and ROI rating.`;
+Analyze hardware compatibility constraints (e.g. Dell 260W PSU lacks 8-pin PCIe power cables, PCIe slot 75W power limit, LGA 1151v2 socket limits, DDR4/DDR5 DIMM slots) and provide concrete, actionable upgrade recommendations with estimated prices (in VND or USD).`;
 
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [
-                {
-                  role: 'user',
-                  parts: [{ text: `${systemPrompt}
+    // Cascade candidate active models
+    const candidateModels = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-flash-latest', 'gemini-2.0-flash'];
+    let replyText = '';
+    let success = false;
+    let lastErrorMsg = '';
 
-User Question: ${text}` }]
-                }
-              ],
-              tools: [{ googleSearch: {} }]
-            })
-          }
-        );
+    for (const model of candidateModels) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: `${systemPrompt}\n\nUser Question: ${text}` }]
+              }
+            ]
+          })
+        });
 
         const data = await response.json();
-        const candidate = data?.candidates?.[0];
-        const replyText = candidate?.content?.parts?.[0]?.text || "Không nhận được phản hồi từ AI API.";
-        
-        // Extract grounding metadata sources if available
-        const searchChunks = candidate?.groundingMetadata?.groundingChunks || [];
-        const sources = searchChunks
-          .filter((c: any) => c.web?.uri && c.web?.title)
-          .map((c: any) => ({ title: c.web.title, url: c.web.uri }))
-          .slice(0, 4);
-
-        setMessages(prev => [
-          ...prev,
-          {
-            id: (Date.now() + 1).toString(),
-            sender: 'ai',
-            text: replyText,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            sources: sources.length > 0 ? sources : undefined,
-            isGrounding: true
-          }
-        ]);
-        soundFx.playChime();
-      } catch (err) {
-        console.error('Gemini API Error:', err);
-        fallbackLocalAdvisor(text);
-      } finally {
-        setIsLoading(false);
+        if (response.ok && data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+          replyText = data.candidates[0].content.parts[0].text;
+          success = true;
+          break;
+        } else if (data?.error?.message) {
+          lastErrorMsg = `[${model}] ${data.error.message}`;
+          // If rate limit 429 or quota exceeded, try next model
+          continue;
+        }
+      } catch (err: any) {
+        lastErrorMsg = err?.message || 'Network error';
       }
-    } else {
-      // Offline / Local Smart Hardware Engine
-      setTimeout(() => {
-        fallbackLocalAdvisor(text);
-        setIsLoading(false);
-      }, 700);
-    }
-  };
-
-  const fallbackLocalAdvisor = (query: string) => {
-    const q = query.toLowerCase();
-    let reply = '';
-    const isIntelDell = telemetry.cpu.name.includes('i5-8400') || telemetry.motherboard.name.includes('Dell');
-
-    if (q.includes('2 triệu') || q.includes('2tr') || q.includes('100') || q.includes('ngân sách thấp')) {
-      reply = isIntelDell ? `### Đề xuất nâng cấp tối ưu với ngân sách ~2.000.000 VNĐ cho máy của bạn:
-
-1. **Gắn thêm 1 ổ SSD NVMe 500GB (PCIe Gen3/Gen4) (~700.000 - 850.000 VNĐ)**:
-   - **Tác dụng**: Cài đặt lại Windows và các phần mềm chính lên ổ SSD này. Tốc độ đọc sẽ tăng vọt từ 540 MB/s lên **~3.500 MB/s** (gấp 6.5 lần so với SSD SATA hiện tại).
-   - **Model khuyên dùng**: Kingston NV2 500GB, Kioxia Exceria G2 500GB hoặc WD Blue SN580 500GB.
-
-2. **Lắp Card đồ họa cũ không cần nguồn phụ GTX 1050 Ti 4GB / GTX 1650 4GB (~1.200.000 - 1.600.000 VNĐ)**:
-   - **Lý do**: Nguồn Dell của bạn có công suất **260W** và không có sẵn đầu cắm nguồn phụ 6-pin/8-pin. Do đó, các dòng card ăn điện dưới 75W cấp điện trực tiếp từ khe cắm PCIe x16 là sự lựa chọn an toàn tuyệt đối.
-   - **Hiệu năng**: Kéo mượt Liên Minh, Valorant, CS2 (1080p 100+ FPS) và hỗ trợ NVENC preview timeline Premiere mượt mà.` 
-      : `### Đề xuất nâng cấp ngân sách ~2.000.000 VNĐ:
-1. Thêm 1 ổ SSD NVMe Gen4 1TB làm ổ cache chuyên dụng (~1.500.000 VNĐ).
-2. Trang bị tản nhiệt khí tháp đôi Dual-Tower hoặc nâng cấp quạt case tản nhiệt.`;
-    } else if (q.includes('nguồn 260w') || q.includes('nguồn phụ') || q.includes('card đồ họa nào') || q.includes('gpu')) {
-      reply = `### Phân tích độ tương thích nguồn & Card đồ họa cho hệ thống:
-
-- **Công suất nguồn hiện tại**: **${telemetry.psu.ratedWattage}W (${telemetry.psu.rating})**
-- **Đặc điểm**: Nguồn đồng bộ OEM Dell thường không trang bị dây cấp nguồn phụ 6-pin hoặc 8-pin PCIe.
-
-**Các mẫu Card đồ họa tương thích 100% (Ăn điện ≤ 75W qua khe PCIe, không cần cắm nguồn phụ)**:
-1. **NVIDIA GeForce GTX 1650 4GB GDDR6 (Bản không nguồn phụ)**:
-   - Giá tham khảo: ~1.500.000 - 1.900.000 VNĐ (cũ).
-   - Mức ăn điện: 75W. Hoạt động cực kỳ an toàn trên nguồn 260W.
-2. **NVIDIA GeForce RTX 3050 6GB (Bản 70W mới)**:
-   - Giá tham khảo: ~4.500.000 - 4.900.000 VNĐ (mới chính hãng).
-   - Mức ăn điện: 70W. Hỗ trợ DLSS, Ray Tracing và bộ mã hóa NVENC thế hệ mới.
-3. **AMD Radeon RX 6400 4GB Low-Profile**:
-   - Mức ăn điện: 53W. Giá tham khảo ~2.200.000 VNĐ.
-
-*Lưu ý: Không nên gắn các dòng card như GTX 1660 Super, RTX 2060, RTX 3060 vì các card này yêu cầu nguồn từ 450W - 550W và bắt buộc có đầu cấp nguồn 8-pin.*`;
-    } else if (q.includes('ram') || q.includes('32gb') || q.includes('ssd')) {
-      reply = `### So sánh nâng RAM 32GB vs Nâng SSD 500GB/1TB:
-
-1. **Về RAM (Hiện tại đang có 16GB Dual-Channel DDR4-2666)**:
-   - 16GB RAM Dual-Channel trên máy bạn đang hoạt động rất tốt, đáp ứng mượt mà hầu hết nhu cầu lập trình VS Code, duyệt web 30 tab và chơi game esports.
-   - Trừ khi bạn chạy máy ảo (VMware) nặng hoặc chạy cluster Docker > 10 containers, việc lên 32GB lúc này chỉ mang lại cải thiện khoảng 5 - 10%.
-
-2. **Về SSD (Khuyên nên nâng cấp trước)**:
-   - Hiện tại máy đang chạy ổ SSD SATA 180GB (540 MB/s) và HDD Toshiba 1TB (185 MB/s).
-   - Nâng cấp lên **SSD NVMe M.2 500GB/1TB (3.500 MB/s)** sẽ giúp Windows khởi động trong 6 giây, mở project code nặng và load game nhanh hơn gấp 4 - 6 lần rõ rệt!
-
-**Kết luận**: Bạn nên ưu tiên **Nâng cấp ổ SSD NVMe trước**, sau đó mới cân nhắc nâng RAM.`;
-    } else if (q.includes('rtx 3060') || q.includes('4060')) {
-      reply = `### Tư vấn lắp RTX 3060 / RTX 4060 trên hệ thống Dell i5-8400:
-
-1. **Về nguồn điện**:
-   - RTX 3060 ăn khoảng **170W**, RTX 4060 ăn khoảng **115W**. Nguồn Dell **260W** hiện tại **hoàn toàn không đủ tải** và không có đầu cắm nguồn 8-pin.
-   - Để lắp được, bạn buộc phải nâng cấp nguồn lên tối thiểu **550W - 650W 80 PLUS** (Cần kiểm tra xem main Dell dùng chuẩn cáp nguồn 24-pin tiêu chuẩn hay cáp nguồn riêng 6-pin/8-pin của Dell).
-
-2. **Về mức độ nghẽn cổ chai (Bottleneck)**:
-   - CPU Intel Core i5-8400 (6 nhân / 6 luồng) thế hệ 8 sẽ bị nghẽn khoảng **22% - 28%** khi kéo RTX 3060 / 4060 ở độ phân giải 1080p trong các tựa game ăn nhiều CPU như Cyberpunk 2077 hay Warzone.
-
-**Lời khuyên**: Nếu muốn gắn RTX 3060/4060, phương án kinh tế hơn là nâng cấp toàn bộ nền tảng (CPU i5-12400F + Main B760 + Nguồn 650W).`;
-    } else {
-      reply = `### Phân tích nâng cấp chuyên sâu cho máy ${telemetry.hostName}:
-
-- **CPU**: Intel Core i5-8400 (6 Cores / 6 Threads, Socket LGA 1151v2) -> Nâng cấp tối đa lên i7-8700 hoặc i9-9900 (nhưng giá CPU cũ đời này hiện còn cao, không tối ưu P/P).
-- **RAM**: Đang có 16GB Dual-Channel DDR4-2666 (DIMM1 + DIMM2). Bo mạch còn 2 khe trống sẵn sàng cắm thêm khi cần.
-- **Ổ cứng**: Nên lắp thêm ổ SSD NVMe PCIe Gen3x4 500GB (~750k) làm ổ hệ thống chính.
-- **Card đồ họa**: Khuyên dùng GTX 1650 GDDR6 (75W) hoặc RTX 3050 6GB (70W) để tận dụng nguồn Dell 260W nguyên bản.
-
-*Mẹo: Nhập Google Gemini API Key (bấm nút cài đặt chìa khóa góc trên) để kích hoạt Google Search Grounding tìm giá bán thực tế và link mua hàng trực tiếp trên Shopee/Tiki/GearVN theo thời gian thực!*`;
     }
 
-    setMessages(prev => [
-      ...prev,
-      {
-        id: (Date.now() + 1).toString(),
-        sender: 'ai',
-        text: reply,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    ]);
-    soundFx.playChime();
+    setIsLoading(false);
+
+    if (success && replyText) {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          sender: 'ai',
+          text: replyText,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      soundFx.playChime();
+    } else {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          sender: 'ai',
+          text: `Lỗi kết nối Gemini API: ${lastErrorMsg || 'Không thể gọi AI API. Vui lòng kiểm tra lại API Key hoặc quota tài khoản Google AI Studio.'}`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isError: true
+        }
+      ]);
+    }
   };
 
   return (
@@ -273,18 +216,18 @@ User Question: ${text}` }]
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-base font-extrabold text-white">
-                    {lang === 'EN' ? 'AeroSpec AI Hardware & Upgrade Advisor' : 'Trợ Lý AI Tư Vấn Nâng Cấp Phần Cứng'}
+                    {lang === 'EN' ? 'AeroSpec AI Hardware Upgrade Consultant' : 'Trợ Lý AI Tư Vấn Nâng Cấp Phần Cứng'}
                   </h3>
-                  <span className={`px-2 py-0.2 text-[10px] font-mono font-bold rounded-full border flex items-center gap-1 ${
+                  <span className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded-full border flex items-center gap-1 ${
                     apiKey 
                       ? 'bg-emerald-950 text-emerald-300 border-emerald-700/60' 
-                      : 'bg-sky-950 text-sky-300 border-sky-700/60'
+                      : 'bg-amber-950 text-amber-300 border-amber-700/60'
                   }`}>
                     <Globe className="w-3 h-3" />
-                    {apiKey ? 'Live Web Grounding Active' : 'Smart Local Architecture Engine'}
+                    {apiKey ? 'Gemini 3.5 Active' : 'API Key Required'}
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 font-mono">
+                <p className="text-xs text-slate-400 font-mono mt-0.5">
                   Target Machine: <strong className="text-slate-200">{telemetry.cpu.name}</strong> • {telemetry.ram.totalGb}GB • {telemetry.psu.ratedWattage}W PSU
                 </p>
               </div>
@@ -294,10 +237,10 @@ User Question: ${text}` }]
               <button
                 onClick={() => setShowKeyInput(!showKeyInput)}
                 className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-mono font-bold flex items-center gap-1.5 transition cursor-pointer"
-                title="Cài đặt Gemini API Key để bật tìm kiếm giá trực tuyến"
+                title="Cài đặt Gemini API Key để trò chuyện với AI"
               >
                 <Key className="w-3.5 h-3.5 text-amber-400" />
-                <span>{apiKey ? 'Key Connected' : 'Connect API Key'}</span>
+                <span>{apiKey ? 'API Key Connected' : 'Connect API Key'}</span>
               </button>
 
               <button
@@ -314,7 +257,7 @@ User Question: ${text}` }]
             <div className="p-4 bg-slate-950 border-b border-slate-800 flex flex-col gap-2">
               <div className="flex items-center justify-between text-xs text-slate-300">
                 <span className="font-bold flex items-center gap-1.5">
-                  <Key className="w-3.5 h-3.5 text-amber-400" /> Google Gemini API Key (Bật tìm kiếm giá web theo thời gian thực)
+                  <Key className="w-3.5 h-3.5 text-amber-400" /> Google Gemini API Key
                 </span>
                 <a
                   href="https://aistudio.google.com/app/apikey"
@@ -330,7 +273,7 @@ User Question: ${text}` }]
                   type="password"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Dán mã API Key (AIzaSy...)"
+                  placeholder="Dán mã API Key (AQ.Ab8... hoặc AIzaSy...)"
                   className="flex-1 px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 font-mono"
                 />
                 <button
@@ -344,7 +287,7 @@ User Question: ${text}` }]
           )}
 
           {/* Live Machine Specs Summary Bar */}
-          <div className="px-5 py-2.5 bg-slate-950/70 border-b border-slate-800/80 flex flex-wrap items-center justify-between text-xs font-mono text-slate-400 gap-2">
+          <div className="px-5 py-2 bg-slate-950/70 border-b border-slate-800/80 flex flex-wrap items-center justify-between text-xs font-mono text-slate-400 gap-2">
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1.5 text-slate-300">
                 <Cpu className="w-3.5 h-3.5 text-sky-400" /> {telemetry.cpu.name}
@@ -356,7 +299,7 @@ User Question: ${text}` }]
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Main: {telemetry.motherboard.name}
               </span>
             </div>
-            <span className="text-[11px] text-slate-500">Live Telemetry Context Active</span>
+            <span className="text-[11px] text-slate-500">Live Telemetry Context Injected</span>
           </div>
 
           {/* Messages Stream Body */}
@@ -369,7 +312,7 @@ User Question: ${text}` }]
                 }`}
               >
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-md ${
-                  msg.sender === 'user' ? 'bg-sky-500 text-white' : 'bg-indigo-600 text-white'
+                  msg.sender === 'user' ? 'bg-sky-500 text-white' : (msg.isError ? 'bg-amber-600 text-white' : 'bg-indigo-600 text-white')
                 }`}>
                   {msg.sender === 'user' ? <span className="font-bold text-xs font-mono">YOU</span> : <Bot className="w-4 h-4" />}
                 </div>
@@ -377,33 +320,11 @@ User Question: ${text}` }]
                 <div className={`p-4 rounded-2xl flex flex-col gap-2 ${
                   msg.sender === 'user'
                     ? 'bg-sky-600 text-white rounded-tr-none'
-                    : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none shadow-lg'
+                    : (msg.isError ? 'bg-amber-950/60 border border-amber-800 text-amber-200 rounded-tl-none' : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none shadow-lg')
                 }`}>
                   <div className="text-xs leading-relaxed whitespace-pre-wrap font-sans">
                     {msg.text}
                   </div>
-
-                  {/* Grounded Web Sources */}
-                  {msg.sources && msg.sources.length > 0 && (
-                    <div className="pt-2 border-t border-slate-800 mt-1 flex flex-col gap-1">
-                      <span className="text-[10px] font-mono text-slate-400 font-bold flex items-center gap-1">
-                        <Globe className="w-3 h-3 text-sky-400" /> Nguồn kiểm chứng trực tuyến:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {msg.sources.map((s, idx) => (
-                          <a
-                            key={idx}
-                            href={s.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-sky-300 hover:text-sky-200 border border-slate-700 rounded text-[10px] font-mono truncate max-w-[200px] transition"
-                          >
-                            {s.title}
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   <span className={`text-[10px] font-mono mt-0.5 ${msg.sender === 'user' ? 'text-sky-200 text-right' : 'text-slate-500'}`}>
                     {msg.timestamp}
@@ -420,7 +341,7 @@ User Question: ${text}` }]
                 <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 flex items-center gap-2">
                   <RefreshCw className="w-4 h-4 text-sky-400 animate-spin" />
                   <span className="text-xs font-mono">
-                    {apiKey ? 'Đang tìm kiếm dữ liệu thị trường và phân tích tương thích...' : 'AI đang phân tích kiến trúc máy...'}
+                    Đang gửi dữ liệu phần cứng và nhận phản hồi từ Gemini AI...
                   </span>
                 </div>
               </div>
@@ -432,7 +353,7 @@ User Question: ${text}` }]
           {/* Quick Prompt Chips */}
           <div className="px-4 py-2.5 bg-slate-900/90 border-t border-slate-800 flex items-center gap-2 overflow-x-auto">
             <span className="text-[11px] font-mono text-slate-400 shrink-0 font-bold flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-sky-400" /> Gợi ý câu hỏi:
+              <Sparkles className="w-3.5 h-3.5 text-sky-400" /> Gợi ý:
             </span>
             {quickQuestions.map((q, idx) => (
               <button

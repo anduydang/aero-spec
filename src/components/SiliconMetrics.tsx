@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cpu, Layers, Fan, ArrowUpRight, Gauge, Thermometer, Zap, BatteryCharging, AlertTriangle } from 'lucide-react';
+import { Cpu, Layers, Fan, ArrowUpRight, AlertTriangle } from 'lucide-react';
 import type { HardwareTelemetryState } from '../types/hardware';
 import { motion } from 'framer-motion';
 
@@ -15,6 +15,8 @@ export const SiliconMetrics: React.FC<SiliconMetricsProps> = ({
   perCoreLabel
 }) => {
   const { cpu, ram, cooler } = telemetry;
+  const coreCount = cpu.perCoreLoads.length || cpu.cores || 6;
+  const gridColClass = coreCount <= 4 ? 'grid-cols-4' : coreCount <= 6 ? 'grid-cols-6' : coreCount <= 8 ? 'grid-cols-8' : 'grid-cols-12';
 
   return (
     <section className="col-span-12 xl:col-span-3 flex flex-col gap-4">
@@ -23,7 +25,7 @@ export const SiliconMetrics: React.FC<SiliconMetricsProps> = ({
       <motion.div 
         whileHover={{ y: -2 }}
         onClick={() => onInspect('cpu')} 
-        className="studio-card rounded-2xl p-4 flex flex-col gap-3.5 cursor-pointer group"
+        className="studio-card rounded-2xl p-4 flex flex-col gap-3 cursor-pointer group"
       >
         <div className="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-2.5">
           <div className="flex items-center gap-2">
@@ -38,51 +40,72 @@ export const SiliconMetrics: React.FC<SiliconMetricsProps> = ({
         </div>
 
         <div>
-          <h2 className="text-base font-extrabold dark:text-white text-slate-900 group-hover:text-sky-500 transition">{cpu.name}</h2>
-          <p className="text-xs dark:text-slate-300 text-slate-600 font-mono mt-0.5">{cpu.cores} Cores / {cpu.threads} Threads • {cpu.cache}</p>
+          <h2 className="text-base font-extrabold dark:text-white text-slate-900 group-hover:text-sky-500 transition leading-snug">
+            {cpu.name}
+          </h2>
+          <p className="text-xs dark:text-slate-400 text-slate-600 font-mono mt-1">
+            {cpu.cores} Physical Cores • {cpu.threads} Threads • {cpu.cache}
+          </p>
         </div>
 
-        {/* Telemetry 4-Grid */}
+        {/* Telemetry 4-Grid Clean Studio Typography */}
         <div className="grid grid-cols-2 gap-2 font-mono text-xs">
-          <div className="dark:bg-slate-900 bg-slate-50 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 shadow-sm flex flex-col">
-            <span className="text-[11px] dark:text-slate-400 text-slate-500 font-bold flex items-center gap-1">
-              <Gauge className="w-3 h-3 text-sky-500" /> Avg Clock
+          <div className="dark:bg-slate-900 bg-slate-50 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 shadow-sm flex flex-col justify-between">
+            <span className="text-[10px] dark:text-slate-400 text-slate-500 font-bold uppercase tracking-wider">
+              Avg Clock
             </span>
-            <span className="text-sm font-extrabold dark:text-white text-slate-900 mt-0.5">{cpu.avgClockMhz.toLocaleString()} <span className="text-[10px] font-normal">MHz</span></span>
+            <div className="flex items-baseline gap-1 mt-1">
+              <span className="text-sm font-extrabold dark:text-white text-slate-900">{cpu.avgClockMhz.toLocaleString()}</span>
+              <span className="text-[10px] dark:text-slate-400 text-slate-500">MHz</span>
+            </div>
           </div>
 
-          <div className="dark:bg-slate-900 bg-slate-50 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 shadow-sm flex flex-col">
-            <span className="text-[11px] dark:text-slate-400 text-slate-500 font-bold flex items-center gap-1">
-              <Thermometer className="w-3 h-3 text-emerald-500" /> Core Temp
+          <div className="dark:bg-slate-900 bg-slate-50 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 shadow-sm flex flex-col justify-between">
+            <span className="text-[10px] dark:text-slate-400 text-slate-500 font-bold uppercase tracking-wider">
+              Core Temp
             </span>
-            <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">{cpu.tempC.toFixed(1)} <span className="text-[10px] font-normal">°C</span></span>
+            <div className="flex items-baseline gap-1 mt-1">
+              <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">{cpu.tempC.toFixed(1)}</span>
+              <span className="text-[10px] dark:text-slate-400 text-slate-500">°C</span>
+            </div>
           </div>
 
-          <div className="dark:bg-slate-900 bg-slate-50 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 shadow-sm flex flex-col">
-            <span className="text-[11px] dark:text-slate-400 text-slate-500 font-bold flex items-center gap-1">
-              <Zap className="w-3 h-3 text-amber-500" /> VCore
+          <div className="dark:bg-slate-900 bg-slate-50 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 shadow-sm flex flex-col justify-between">
+            <span className="text-[10px] dark:text-slate-400 text-slate-500 font-bold uppercase tracking-wider">
+              VCore
             </span>
-            <span className="text-sm font-extrabold dark:text-amber-300 text-amber-600 mt-0.5">{cpu.vcoreV.toFixed(3)} <span className="text-[10px] font-normal">V</span></span>
+            <div className="flex items-baseline gap-1 mt-1">
+              <span className="text-sm font-extrabold dark:text-amber-300 text-amber-600">{cpu.vcoreV.toFixed(3)}</span>
+              <span className="text-[10px] dark:text-slate-400 text-slate-500">V</span>
+            </div>
           </div>
 
-          <div className="dark:bg-slate-900 bg-slate-50 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 shadow-sm flex flex-col">
-            <span className="text-[11px] dark:text-slate-400 text-slate-500 font-bold flex items-center gap-1">
-              <BatteryCharging className="w-3 h-3 text-indigo-500" /> Package Power
+          <div className="dark:bg-slate-900 bg-slate-50 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 shadow-sm flex flex-col justify-between">
+            <span className="text-[10px] dark:text-slate-400 text-slate-500 font-bold uppercase tracking-wider">
+              Power Draw
             </span>
-            <span className="text-sm font-extrabold dark:text-indigo-300 text-indigo-600 mt-0.5">{cpu.powerW.toFixed(1)} <span className="text-[10px] font-normal">W</span></span>
+            <div className="flex items-baseline gap-1 mt-1">
+              <span className="text-sm font-extrabold dark:text-indigo-300 text-indigo-600">{cpu.powerW.toFixed(1)}</span>
+              <span className="text-[10px] dark:text-slate-400 text-slate-500">W</span>
+            </div>
           </div>
         </div>
 
-        {/* 8 Core Live Bars */}
-        <div className="flex flex-col gap-1.5 mt-0.5">
+        {/* Dynamic Core Live Bars */}
+        <div className="flex flex-col gap-1.5 mt-1">
           <div className="flex justify-between items-center text-[11px] font-mono dark:text-slate-300 text-slate-700">
-            <span className="font-bold">{perCoreLabel}</span>
-            <span className="text-sky-500 font-extrabold">Avg {Math.round(cpu.perCoreLoads.reduce((a,b)=>a+b,0)/cpu.perCoreLoads.length)}%</span>
+            <span className="font-bold">{perCoreLabel} ({coreCount} Cores)</span>
+            <span className="text-sky-500 font-extrabold">
+              Avg {Math.round(cpu.perCoreLoads.reduce((a, b) => a + b, 0) / (cpu.perCoreLoads.length || 1))}%
+            </span>
           </div>
-          <div className="grid grid-cols-8 gap-1 h-9 dark:bg-slate-900 bg-slate-100 p-1 rounded-lg border dark:border-slate-800 border-slate-200 shadow-inner">
+          <div className={`grid ${gridColClass} gap-1.5 h-8 dark:bg-slate-900 bg-slate-100 p-1 rounded-lg border dark:border-slate-800 border-slate-200 shadow-inner`}>
             {cpu.perCoreLoads.map((load, idx) => (
               <div key={idx} className="dark:bg-slate-800 bg-slate-200 rounded flex flex-col justify-end overflow-hidden">
-                <div className="bg-sky-500 w-full transition-all duration-300" style={{ height: `${load}%` }}></div>
+                <div 
+                  className="bg-sky-500 w-full transition-all duration-300 rounded-b" 
+                  style={{ height: `${Math.max(8, load)}%` }}
+                />
               </div>
             ))}
           </div>
@@ -107,7 +130,7 @@ export const SiliconMetrics: React.FC<SiliconMetricsProps> = ({
               ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' 
               : 'dark:bg-indigo-950 dark:text-indigo-300 bg-indigo-100 text-indigo-800'
           }`}>
-            {ram.isSingleChannel ? 'SINGLE-CH (A2)' : 'DUAL-CH • CL30'}
+            {ram.isSingleChannel ? 'SINGLE-CH' : 'DUAL-CHANNEL'}
           </span>
         </div>
 
@@ -115,7 +138,9 @@ export const SiliconMetrics: React.FC<SiliconMetricsProps> = ({
           <h3 className="text-sm font-extrabold dark:text-white text-slate-900 group-hover:text-indigo-500 transition">
             {ram.totalGb}GB {ram.channelMode}
           </h3>
-          <p className="text-xs dark:text-slate-300 text-slate-600 font-mono mt-0.5">DDR5-{ram.frequencyMhz * 2} • {ram.die}</p>
+          <p className="text-xs dark:text-slate-400 text-slate-600 font-mono mt-0.5">
+            {ram.frequencyMhz > 2000 ? `DDR5-${ram.frequencyMhz * 2}` : `DDR4-${ram.frequencyMhz}`} • {ram.die}
+          </p>
         </div>
 
         {/* Timings Table */}
@@ -134,7 +159,7 @@ export const SiliconMetrics: React.FC<SiliconMetricsProps> = ({
         {ram.isSingleChannel && (
           <div className="text-[11px] font-mono bg-amber-500/10 text-amber-600 dark:text-amber-400 p-2 rounded-lg border border-amber-500/30 flex items-center gap-1.5">
             <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-            <span>Single-Channel Mode (Slot B2 empty). Bandwidth halved!</span>
+            <span>Single-Channel Mode active. Bandwidth halved!</span>
           </div>
         )}
       </motion.div>
