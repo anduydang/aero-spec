@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::process::Command;
 use sysinfo::System;
 
+pub mod telemetry;
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RamSlotInfo {
     pub slot: String,
@@ -70,11 +72,17 @@ pub struct LiveHostTelemetry {
 
 fn parse_bios_release_date(value: &str) -> String {
     let trimmed = value.trim();
-    if trimmed.len() >= 10 && trimmed.as_bytes().get(4) == Some(&b'-') && trimmed.as_bytes().get(7) == Some(&b'-') {
+    if trimmed.len() >= 10
+        && trimmed.as_bytes().get(4) == Some(&b'-')
+        && trimmed.as_bytes().get(7) == Some(&b'-')
+    {
         return trimmed[..10].to_string();
     }
 
-    let digits: String = trimmed.chars().filter(|character| character.is_ascii_digit()).collect();
+    let digits: String = trimmed
+        .chars()
+        .filter(|character| character.is_ascii_digit())
+        .collect();
     if digits.len() >= 8 {
         return format!("{}-{}-{}", &digits[0..4], &digits[4..6], &digits[6..8]);
     }
@@ -126,7 +134,11 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
     let cpu_cores = sys.physical_core_count().unwrap_or(0);
     let cpu_threads = sys.cpus().len();
     let cpu_global_load = sys.global_cpu_usage();
-    let per_core_loads: Vec<u32> = sys.cpus().iter().map(|c| c.cpu_usage().round() as u32).collect();
+    let per_core_loads: Vec<u32> = sys
+        .cpus()
+        .iter()
+        .map(|c| c.cpu_usage().round() as u32)
+        .collect();
 
     let wmi_script = r#"
         $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1 Name, MaxClockSpeed, CurrentClockSpeed | ConvertTo-Json -Compress
@@ -143,7 +155,11 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
         .output();
 
     let mut max_clock = 0;
-    let mut current_clock = sys.cpus().first().map(|cpu| cpu.frequency() as u32).unwrap_or(0);
+    let mut current_clock = sys
+        .cpus()
+        .first()
+        .map(|cpu| cpu.frequency() as u32)
+        .unwrap_or(0);
     let mut board_mfg = "Unknown".to_string();
     let mut board_model = "Unknown".to_string();
     let mut board_ver = "Unknown".to_string();
@@ -220,8 +236,16 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
                             .or_else(|| item.get("Speed").and_then(|clock| clock.as_u64()))
                             .unwrap_or(0) as u32;
                         ram_speed = spd;
-                        let loc = item.get("DeviceLocator").and_then(|l| l.as_str()).unwrap_or("DIMM").to_string();
-                        let mfg = item.get("Manufacturer").and_then(|m| m.as_str()).unwrap_or("Unknown").to_string();
+                        let loc = item
+                            .get("DeviceLocator")
+                            .and_then(|l| l.as_str())
+                            .unwrap_or("DIMM")
+                            .to_string();
+                        let mfg = item
+                            .get("Manufacturer")
+                            .and_then(|m| m.as_str())
+                            .unwrap_or("Unknown")
+                            .to_string();
                         let size_gb = cap / (1024 * 1024 * 1024);
                         ram_slots.push(RamSlotInfo {
                             slot: loc,
@@ -262,9 +286,19 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
                         vec![v]
                     };
                     for item in items {
-                        let model = item.get("Model").and_then(|m| m.as_str()).unwrap_or("Unknown").trim().to_string();
+                        let model = item
+                            .get("Model")
+                            .and_then(|m| m.as_str())
+                            .unwrap_or("Unknown")
+                            .trim()
+                            .to_string();
                         let size_bytes = item.get("Size").and_then(|s| s.as_u64()).unwrap_or(0);
-                        let media = item.get("MediaType").and_then(|m| m.as_str()).unwrap_or("Fixed").trim().to_string();
+                        let media = item
+                            .get("MediaType")
+                            .and_then(|m| m.as_str())
+                            .unwrap_or("Fixed")
+                            .trim()
+                            .to_string();
                         disk_list.push(DiskInfo {
                             model,
                             size_gb: size_bytes / (1000 * 1000 * 1000),
@@ -286,9 +320,15 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
     let channel_mode = if ram_slots.is_empty() {
         "Unknown".to_string()
     } else if is_single {
-        format!("Single-Channel (inferred from {} populated DIMM)", ram_slots.len())
+        format!(
+            "Single-Channel (inferred from {} populated DIMM)",
+            ram_slots.len()
+        )
     } else {
-        format!("Dual-Channel (inferred from {} populated DIMMs)", ram_slots.len())
+        format!(
+            "Dual-Channel (inferred from {} populated DIMMs)",
+            ram_slots.len()
+        )
     };
 
     LiveHostTelemetry {
@@ -353,7 +393,10 @@ mod tests {
             parse_bios_release_date("20260718000000.000000+000"),
             "2026-07-18"
         );
-        assert_eq!(parse_bios_release_date("2026-07-18T00:00:00Z"), "2026-07-18");
+        assert_eq!(
+            parse_bios_release_date("2026-07-18T00:00:00Z"),
+            "2026-07-18"
+        );
         assert_eq!(parse_bios_release_date(""), "Unknown");
     }
 

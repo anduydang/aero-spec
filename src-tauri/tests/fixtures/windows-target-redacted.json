@@ -1,0 +1,149 @@
+{
+  "fixtureMetadata": {
+    "captureSource": "preimplementation-evidence",
+    "capturedAt": "2026-08-25",
+    "schemaVersion": 2,
+    "windowsVersion": "Windows 11"
+  },
+  "system": {
+    "hostName": "<REDACTED_HOST_1>",
+    "osName": "Microsoft Windows 11",
+    "osVersion": "10.0",
+    "uptimeSeconds": 12345
+  },
+  "cpu": {
+    "name": "12th Gen Intel(R) Core(TM) i3-12100F",
+    "manufacturer": "GenuineIntel",
+    "physicalCores": 4,
+    "logicalProcessors": 8,
+    "maxClockMhz": 4300,
+    "l2CacheKib": 5120,
+    "l3CacheKib": 12288
+  },
+  "motherboard": {
+    "manufacturer": "ASUSTeK COMPUTER INC.",
+    "product": "PRIME H610M-K D4",
+    "version": "Rev 1.xx",
+    "biosVendor": "American Megatrends Inc.",
+    "biosVersion": "4.02",
+    "biosReleaseDate": "/Date(1641168000000)/"
+  },
+  "memoryModules": [
+    {
+      "privateKey": "<REDACTED_MEMORY_KEY_1>",
+      "bankLabel": "BANK 0",
+      "deviceLocator": "Controller0-ChannelA-DIMM0",
+      "capacityBytes": 8589934592,
+      "configuredSpeedMtps": 2667,
+      "manufacturer": "G Skill Intl",
+      "partNumber": "F4-2666C19-8GIS",
+      "serialNumber": "<REDACTED_MEMORY_SERIAL_1>"
+    },
+    {
+      "privateKey": "<REDACTED_MEMORY_KEY_2>",
+      "bankLabel": "BANK 2",
+      "deviceLocator": "Controller1-ChannelA-DIMM0",
+      "capacityBytes": 8589934592,
+      "configuredSpeedMtps": 2667,
+      "manufacturer": "G Skill Intl",
+      "partNumber": "F4-2666C19-8GVR",
+      "serialNumber": "<REDACTED_MEMORY_SERIAL_2>"
+    }
+  ],
+  "displayAdapters": [
+    {
+      "privateKey": "<REDACTED_GPU_KEY_1>",
+      "pnpInstanceId": "<REDACTED_GPU_PNP_1>",
+      "name": "NVIDIA GeForce RTX 2060 SUPER",
+      "vendorId": "10DE",
+      "deviceId": "1F06",
+      "subsystemId": "<REDACTED_GPU_SUBSYSTEM_1>",
+      "pciBusId": "<REDACTED_GPU_PCI_1>",
+      "driverVersion": "32.0.15.9649"
+    }
+  ],
+  "storageDevices": [
+    {
+      "privateKey": "<REDACTED_DISK_KEY_1>",
+      "deviceNumber": 0,
+      "pnpInstanceId": "<REDACTED_DISK_PNP_1>",
+      "model": "KINGSTON SV300S37A120G",
+      "serialNumber": "<REDACTED_DISK_SERIAL_1>",
+      "capacityBytes": 120034123776,
+      "mediaType": "ssd",
+      "busType": "SATA",
+      "health": "healthy",
+      "operationalStatus": ["OK"]
+    },
+    {
+      "privateKey": "<REDACTED_DISK_KEY_2>",
+      "deviceNumber": 1,
+      "pnpInstanceId": "<REDACTED_DISK_PNP_2>",
+      "model": "WDC WD2500AAKX",
+      "serialNumber": "<REDACTED_DISK_SERIAL_2>",
+      "capacityBytes": 250059350016,
+      "mediaType": "unspecified",
+      "busType": "SATA",
+      "health": "healthy",
+      "operationalStatus": ["OK"]
+    },
+    {
+      "privateKey": "<REDACTED_DISK_KEY_3>",
+      "deviceNumber": 2,
+      "pnpInstanceId": "<REDACTED_DISK_PNP_3>",
+      "model": "KINGSTON SNVS500G",
+      "serialNumber": "<REDACTED_DISK_SERIAL_3>",
+      "capacityBytes": 500107862016,
+      "mediaType": "ssd",
+      "busType": "NVMe",
+      "health": "healthy",
+      "operationalStatus": ["OK"]
+    }
+  ],
+  "networks": [
+    {
+      "privateKey": "<REDACTED_NETWORK_KEY_1>",
+      "interfaceIndex": 9,
+      "name": "Intel(R) Ethernet Connection (7) I219-V",
+      "interfaceName": "Ethernet 2",
+      "linkSpeedBps": 1000000000,
+      "mediaType": "802.3",
+      "macAddress": "<REDACTED_MAC_1>",
+      "connected": true
+    }
+  ],
+  "pnpDevices": [
+    {
+      "privateKey": "<REDACTED_PNP_KEY_1>",
+      "instanceId": "<REDACTED_PNP_INSTANCE_1>",
+      "name": "Generic PnP Monitor",
+      "category": "display",
+      "manufacturer": "ACER",
+      "status": "OK"
+    },
+    {
+      "privateKey": "<REDACTED_PNP_KEY_2>",
+      "instanceId": "<REDACTED_PNP_INSTANCE_2>",
+      "name": "HID-compliant mouse",
+      "category": "pointing",
+      "manufacturer": "Logitech",
+      "status": "OK"
+    },
+    {
+      "privateKey": "<REDACTED_PNP_KEY_3>",
+      "instanceId": "<REDACTED_PNP_INSTANCE_3>",
+      "name": "HID Keyboard Device",
+      "category": "keyboard",
+      "manufacturer": "Microsoft",
+      "status": "OK"
+    },
+    {
+      "privateKey": "<REDACTED_PNP_KEY_4>",
+      "instanceId": "<REDACTED_PNP_INSTANCE_4>",
+      "name": "High Definition Audio Device",
+      "category": "audio",
+      "manufacturer": "Microsoft",
+      "status": "OK"
+    }
+  ]
+}
