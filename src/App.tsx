@@ -1,12 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useState, useEffect, useMemo } from 'react';
 import { Header } from './components/Header';
 import { SiliconMetrics } from './components/SiliconMetrics';
 import { MotherboardSchematic } from './components/MotherboardSchematic';
 import { PsuAndPeripherals } from './components/PsuAndPeripherals';
 import { CopilotFooter } from './components/CopilotFooter';
-import { DeepInspectorDrawer } from './components/DeepInspectorDrawer';
-import { FlexCardModal } from './components/FlexCardModal';
-import { AiAdvisorModal } from './components/AiAdvisorModal';
 import type { LanguageType, PersonaType, RigProfileType, ThemeType, HardwareTelemetryState, NativeHardwareTelemetryPayload } from './types/hardware';
 import { fullRigTelemetry, missingRigTelemetry } from './data/mockData';
 import { createLiveTelemetryBaseline, mergeNativeTelemetry } from './data/liveTelemetry';
@@ -14,6 +11,10 @@ import { getDynamicInspectorItem } from './data/inspectorGenerator';
 import { i18nData } from './data/i18nData';
 import { soundFx } from './utils/soundFx';
 import { calculateHardwareSynergyScore } from './utils/scoreCalculator';
+
+const DeepInspectorDrawer = lazy(() => import('./components/DeepInspectorDrawer').then((module) => ({ default: module.DeepInspectorDrawer })));
+const FlexCardModal = lazy(() => import('./components/FlexCardModal').then((module) => ({ default: module.FlexCardModal })));
+const AiAdvisorModal = lazy(() => import('./components/AiAdvisorModal').then((module) => ({ default: module.AiAdvisorModal })));
 
 export function App() {
   const [theme, setTheme] = useState<ThemeType>(() => (localStorage.getItem('aerospec_theme') as ThemeType) || 'slate');
@@ -114,7 +115,7 @@ export function App() {
       />
 
       {/* 3-Column Core Telemetry Dashboard */}
-      <main className="grid grid-cols-1 xl:grid-cols-[minmax(250px,0.8fr)_minmax(520px,1.8fr)_minmax(250px,0.8fr)] gap-3 flex-1 items-start">
+      <main className="grid grid-cols-1 xl:grid-cols-[minmax(250px,0.8fr)_minmax(520px,1.8fr)_minmax(250px,0.8fr)] gap-3 items-start">
         <SiliconMetrics 
           telemetry={telemetry}
           onInspect={handleInspect}
@@ -144,41 +145,47 @@ export function App() {
       />
 
       {/* Slide-Over Deep Component Inspector Drawer */}
-      <DeepInspectorDrawer 
-        item={activeInspectorItem}
-        lang={lang}
-        lowLevelTitle={dict.lowLevelTitle}
-        archTitle={dict.archTitle}
-        onClose={() => {
-          soundFx.playClick();
-          setActiveInspectorId(null);
-        }}
-      />
+      {activeInspectorItem && <Suspense fallback={null}>
+        <DeepInspectorDrawer
+          item={activeInspectorItem}
+          lang={lang}
+          lowLevelTitle={dict.lowLevelTitle}
+          archTitle={dict.archTitle}
+          onClose={() => {
+            soundFx.playClick();
+            setActiveInspectorId(null);
+          }}
+        />
+      </Suspense>}
 
       {/* Holographic Flex Card Export Preview Modal */}
-      <FlexCardModal 
-        isOpen={isFlexCardOpen}
-        telemetry={telemetry}
-        lang={lang}
-        persona={persona}
-        score={hardwareScore}
-        onClose={() => {
-          soundFx.playClick();
-          setIsFlexCardOpen(false);
-        }}
-      />
+      {isFlexCardOpen && <Suspense fallback={null}>
+        <FlexCardModal
+          isOpen={isFlexCardOpen}
+          telemetry={telemetry}
+          lang={lang}
+          persona={persona}
+          score={hardwareScore}
+          onClose={() => {
+            soundFx.playClick();
+            setIsFlexCardOpen(false);
+          }}
+        />
+      </Suspense>}
 
       {/* AI Upgrade Advisor & Live Search Modal */}
-      <AiAdvisorModal 
-        isOpen={isAiAdvisorOpen}
-        telemetry={telemetry}
-        score={hardwareScore}
-        lang={lang}
-        onClose={() => {
-          soundFx.playClick();
-          setIsAiAdvisorOpen(false);
-        }}
-      />
+      {isAiAdvisorOpen && <Suspense fallback={null}>
+        <AiAdvisorModal
+          isOpen={isAiAdvisorOpen}
+          telemetry={telemetry}
+          score={hardwareScore}
+          lang={lang}
+          onClose={() => {
+            soundFx.playClick();
+            setIsAiAdvisorOpen(false);
+          }}
+        />
+      </Suspense>}
     </div>
   );
 }

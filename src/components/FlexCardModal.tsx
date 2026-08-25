@@ -152,7 +152,7 @@ export const FlexCardModal: React.FC<FlexCardModalProps> = ({
                       </span>
                     </div>
                     <p className="text-[11px] font-mono text-slate-400">
-                      HOST: <strong className="text-slate-200">{telemetry.hostName}</strong> • {new Date().toLocaleDateString('vi-VN')}
+                      HOST: <strong className="text-slate-200">{telemetry.hostName}</strong> • {telemetry.telemetry.mode === 'simulated' ? 'SIMULATED PROFILE' : 'LIVE SNAPSHOT'}
                     </p>
                   </div>
                 </div>
