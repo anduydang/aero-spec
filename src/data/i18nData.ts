@@ -27,7 +27,7 @@ export const i18nData: Record<LanguageType, DictContent> = {
     uptime: "Uptime:",
     busStatus: "Hardware Bus Active",
     targetPersona: "Target Persona:",
-    rigMode: "Rig Simulation:",
+    rigMode: "Hardware Mode:",
     exportBtn: "Export Card",
     perCore: "Per-Core Active Loads",
     peripheralsTitle: "Connected Peripherals",
@@ -41,6 +41,44 @@ export const i18nData: Record<LanguageType, DictContent> = {
     lowLevelTitle: "Low-Level Hardware Registers & Micro-Specs",
     archTitle: "Silicon & Microarchitecture Breakdown",
     personas: {
+      live: {
+        dev: {
+          score: "82",
+          tag1: "STABLE DUAL-CH",
+          tag2: "COOL THERMAL",
+          tag3: "GOOD FOR CODE",
+          text1: "Intel Core i5-8400 (6 Cores) with 16GB Dual-Channel DDR4-2666 provides a rock-solid dev setup for VS Code, Node.js, and web compilation.",
+          text2: "CPU operating at 46.5°C under stock cooler with 42W draw, well within safe 65W TDP thermal limits.",
+          text3: "16GB RAM handles 4-6 Docker containers comfortably. Consider adding a dedicated SATA SSD for heavy container storage."
+        },
+        creator: {
+          score: "62",
+          tag1: "iGPU ACTIVE",
+          tag2: "QUICKSYNC READY",
+          tag3: "CONSIDER dGPU",
+          text1: "Intel UHD 630 with QuickSync handles 1080p H.264 timeline playback nicely in Premiere Pro.",
+          text2: "Without a discrete GPU, 4K ProRes timeline rendering will be software-rasterized on the 6 CPU cores.",
+          text3: "Adding a dedicated PCIe GPU (e.g. GTX 1660 / RTX 3050+) will dramatically accelerate 3D rendering and video export times."
+        },
+        esports: {
+          score: "70",
+          tag1: "1080p 60FPS",
+          tag2: "LOW LATENCY USB",
+          tag3: "LIGHTWEIGHT ESPORTS",
+          text1: "Intel UHD 630 can run League of Legends, Valorant (Low 720p/1080p) at ~60-80 FPS.",
+          text2: "Dual-channel memory provides necessary memory bandwidth for the integrated graphics engine.",
+          text3: "For 144Hz+ competitive gaming in CS2 or Apex, a dedicated graphics card is recommended."
+        },
+        silent: {
+          score: "92",
+          tag1: "QUIET 42W",
+          tag2: "LOW POWER",
+          tag3: "OFFICE WORK",
+          text1: "System total power draw under load is under 90W, running exceptionally cool and quiet for extended office hours.",
+          text2: "Dell motherboard power delivery is well-regulated for the 65W i5-8400 silicon.",
+          text3: "Ideal low-power productivity workstation with zero thermal throttling risks."
+        }
+      },
       full: {
         dev: {
           score: "97",
@@ -124,7 +162,7 @@ export const i18nData: Record<LanguageType, DictContent> = {
     uptime: "Thời gian chạy:",
     busStatus: "Đường truyền bus đang kích hoạt",
     targetPersona: "Nhu cầu sử dụng:",
-    rigMode: "Giả lập cấu hình:",
+    rigMode: "Chế độ phần cứng:",
     exportBtn: "Xuất Thẻ Flex",
     perCore: "Mức tải từng nhân CPU",
     peripheralsTitle: "Thiết Bị Ngoại Vi Đang Cắm",
@@ -138,6 +176,44 @@ export const i18nData: Record<LanguageType, DictContent> = {
     lowLevelTitle: "Thanh Ghi Phần Cứng & Vi Thông Số",
     archTitle: "Bóc Tách Vi Kiến Trúc & Bán Dẫn",
     personas: {
+      live: {
+        dev: {
+          score: "82",
+          tag1: "DUAL-CH ỔN ĐỊNH",
+          tag2: "NHIỆT ĐỘ MÁT",
+          tag3: "TỐT CHO LẬP TRÌNH",
+          text1: "CPU Intel Core i5-8400 (6 Cores) kết hợp RAM 16GB Dual-Channel DDR4-2666 chạy mượt các tác vụ lập trình VS Code, Node.js và biên dịch web app.",
+          text2: "Nhiệt độ CPU duy trì mát mẻ 46.5°C với tản nhiệt stock, mức ăn điện 42W rất an toàn so với giới hạn 65W TDP.",
+          text3: "16GB RAM đủ gánh 4-6 container Docker chạy đồng thời. Nên ưu tiên lưu project trên ổ SSD Intel để tốc độ compile nhanh nhất."
+        },
+        creator: {
+          score: "62",
+          tag1: "iGPU TÍCH HỢP",
+          tag2: "QUICKSYNC SẴN SÀNG",
+          tag3: "NÊN GẮN THÊM GPU",
+          text1: "Đồ họa tích hợp Intel UHD 630 hỗ trợ công nghệ Intel QuickSync giúp preview timeline video 1080p H.264 mượt mà trên Premiere Pro.",
+          text2: "Do không có GPU rời, việc render video 4K nặng hoặc dựng 3D Blender sẽ phụ thuộc hoàn toàn vào 6 nhân CPU.",
+          text3: "Khuyến nghị gắn thêm GPU rời (như GTX 1660 / RTX 3050) để tăng tốc xuất video Premiere và dựng hiệu ứng 3D."
+        },
+        esports: {
+          score: "70",
+          tag1: "1080p 60FPS",
+          tag2: "ĐỘ TRỄ USB THẤP",
+          tag3: "ESPORTS NHẸ",
+          text1: "Đồ họa Intel UHD 630 đủ sức kéo các game esports nhẹ như Liên Minh Huyền Thoại, Valorant (Low 720p/1080p) ở mức 60-80 FPS.",
+          text2: "Cấu hình RAM Dual-Channel 16GB giúp tăng băng thông đồ họa chia sẻ cho iGPU so với cắm 1 thanh đơn.",
+          text3: "Nếu muốn chơi CS2 hoặc Apex Legends ở màn hình 144Hz mượt mà, cần nâng cấp thêm card đồ họa rời."
+        },
+        silent: {
+          score: "92",
+          tag1: "MÁT & ÊM (42W)",
+          tag2: "TIẾT KIỆM ĐIỆN",
+          tag3: "VĂN PHÒNG",
+          text1: "Tổng công suất hệ thống chỉ khoảng 88W khi làm việc, quạt chạy êm ái hoàn toàn không gây ồn trong không gian làm việc.",
+          text2: "Bo mạch chủ Dell cung cấp nguồn điện ổn định, linh kiện bền bỉ cho nhu cầu làm việc liên tục 24/7.",
+          text3: "Máy chạy cực kỳ bền bỉ và mát mẻ, không có bất kỳ rủi ro quá nhiệt nào."
+        }
+      },
       full: {
         dev: {
           score: "97",

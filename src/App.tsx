@@ -5,21 +5,83 @@ import { MotherboardSchematic } from './components/MotherboardSchematic';
 import { PsuAndPeripherals } from './components/PsuAndPeripherals';
 import { CopilotFooter } from './components/CopilotFooter';
 import { DeepInspectorDrawer } from './components/DeepInspectorDrawer';
-import type { LanguageType, PersonaType, RigProfileType, ThemeType } from './types/hardware';
-import { fullRigTelemetry, missingRigTelemetry, inspectorDatabase } from './data/mockData';
+import type { LanguageType, PersonaType, RigProfileType, ThemeType, HardwareTelemetryState } from './types/hardware';
+import { liveRigTelemetry, fullRigTelemetry, missingRigTelemetry, inspectorDatabase } from './data/mockData';
 import { i18nData } from './data/i18nData';
 
 export function App() {
   const [theme, setTheme] = useState<ThemeType>('dark');
-  const [lang, setLang] = useState<LanguageType>('EN');
+  const [lang, setLang] = useState<LanguageType>('VI');
   const [persona, setPersona] = useState<PersonaType>('dev');
-  const [rigProfile, setRigProfile] = useState<RigProfileType>('full');
+  const [rigProfile, setRigProfile] = useState<RigProfileType>('live');
   const [activeInspectorId, setActiveInspectorId] = useState<string | null>(null);
+  const [liveData, setLiveData] = useState<HardwareTelemetryState>(liveRigTelemetry);
 
-  const telemetry = rigProfile === 'full' ? fullRigTelemetry : missingRigTelemetry;
-  const dict = i18nData[lang];
-  const currentInsight = dict.personas[rigProfile][persona];
-  const activeInspectorItem = activeInspectorId ? inspectorDatabase[activeInspectorId] || inspectorDatabase['cpu'] : null;
+  // Attempt to invoke native Tauri hardware detection if running in Tauri
+  useEffect(() => {
+    async function fetchNativeTelemetry() {
+      try {
+        // @ts-ignore
+        if (window.__TAURI_INTERNALS__ || window.__TAURI__) {
+          const { invoke } = await import('@tauri-apps/api/core');
+          const res: any = await invoke('get_live_hardware_telemetry');
+          if (res && res.cpu) {
+            setLiveData(prev => ({
+              ...prev,
+              hostName: res.host_name || prev.hostName,
+              uptime: res.uptime_formatted || prev.uptime,
+              isLiveDetected: true,
+              cpu: {
+                ...prev.cpu,
+                name: res.cpu.name || prev.cpu.name,
+                cores: res.cpu.cores || prev.cpu.cores,
+                threads: res.cpu.threads || prev.cpu.threads,
+                maxClockMhz: res.cpu.max_clock_mhz || prev.cpu.maxClockMhz,
+                perCoreLoads: res.cpu.per_core_loads && res.cpu.per_core_loads.length > 0 ? res.cpu.per_core_loads : prev.cpu.perCoreLoads,
+              },
+              ram: {
+                ...prev.ram,
+                totalGb: res.ram.total_gb || prev.ram.totalGb,
+                channelMode: res.ram.channel_mode || prev.ram.channelMode,
+                isSingleChannel: res.ram.is_single_channel !== undefined ? res.ram.is_single_channel : prev.ram.isSingleChannel,
+                slots: res.ram.slots && res.ram.slots.length > 0 ? res.ram.slots.map((s: any) => ({
+                  slot: s.slot,
+                  size: s.size,
+                  status: 'active',
+                  label: 'DDR'
+                })) : prev.ram.slots,
+              },
+              motherboard: {
+                ...prev.motherboard,
+                name: `${res.motherboard.manufacturer} ${res.motherboard.model}` || prev.motherboard.name,
+              },
+              gpu: {
+                ...prev.gpu,
+                name: res.gpu.name || prev.gpu.name,
+                isDiscrete: res.gpu.is_discrete !== undefined ? res.gpu.is_discrete : prev.gpu.isDiscrete,
+              },
+              storage: {
+                ...prev.storage,
+                m2_1: res.disks && res.disks[0] ? {
+                  ...prev.storage.m2_1,
+                  name: `${res.disks[0].model} (${res.disks[0].size_gb}GB)`,
+                  isPopulated: true,
+                } : prev.storage.m2_1,
+                m2_2: res.disks && res.disks[1] ? {
+                  ...prev.storage.m2_2,
+                  name: `${res.disks[1].model} (${res.disks[1].size_gb}GB)`,
+                  isPopulated: true,
+                } : prev.storage.m2_2,
+              }
+            }));
+          }
+        }
+      } catch (err) {
+        console.warn('Native Tauri hardware probe unavailable, running live baseline telemetry:', err);
+      }
+    }
+    fetchNativeTelemetry();
+  }, []);
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -28,6 +90,11 @@ export function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [theme]);
+
+  const telemetry = rigProfile === 'live' ? liveData : (rigProfile === 'full' ? fullRigTelemetry : missingRigTelemetry);
+  const dict = i18nData[lang];
+  const currentInsight = dict.personas[rigProfile][persona];
+  const activeInspectorItem = activeInspectorId ? inspectorDatabase[activeInspectorId] || inspectorDatabase['cpu'] : null;
 
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   const toggleLang = () => setLang(prev => prev === 'EN' ? 'VI' : 'EN');
@@ -38,6 +105,7 @@ export function App() {
       <Header 
         hostName={telemetry.hostName}
         uptime={telemetry.uptime}
+        isLiveDetected={telemetry.isLiveDetected}
         lang={lang}
         theme={theme}
         persona={persona}

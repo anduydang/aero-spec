@@ -24,6 +24,14 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
   const nodeNvme2Ref = useRef<HTMLDivElement>(null);
   const nodeGpuRef = useRef<HTMLDivElement>(null);
 
+  const isIntel = cpu.name.toLowerCase().includes('intel');
+  const socketLabel = isIntel ? 'LGA 1151 / 1700 SOCKET' : 'LGA 1718 SOCKET';
+  const archFamily = isIntel ? 'Intel Core Processor' : 'AMD AM5 Core';
+  const isDdr4 = ram.config.includes('DDR4');
+  const busTypeLabel = isDdr4 
+    ? (ram.isSingleChannel ? 'DDR4_CH_A [SINGLE]' : 'DDR4_CH_A/B [DUAL]')
+    : (ram.isSingleChannel ? 'DDR5_CH_A [32-BIT]' : 'DDR5_CH_A/B [64-BIT]');
+
   const drawBuses = () => {
     const svg = svgRef.current;
     const area = areaRef.current;
@@ -79,7 +87,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
       `;
     });
 
-    // 2. CPU to M.2_1 NVMe
+    // 2. CPU to Storage 1
     const nvme1StartX = cCpu.left + cCpu.w * 0.25;
     const nvme1BendY = cNvme1.top - 12;
     [-3, 3].forEach(offset => {
@@ -94,7 +102,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
       `;
     });
 
-    // 3. CPU to M.2_2
+    // 3. CPU to Storage 2 (If Populated)
     if (storage.m2_2.isPopulated && cNvme2) {
       const nvme2StartX = cCpu.right - cCpu.w * 0.25;
       const nvme2BendY = cNvme2.top - 12;
@@ -111,25 +119,24 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
       });
     }
 
-    // 4. PCIe x16 GPU Ribbon
+    // 4. PCIe x16 / Ring Bus GPU Ribbon
     const pcieOffsets = [-18, -12, -6, 0, 6, 12, 18];
     pcieOffsets.forEach((offset, idx) => {
       const x = cCpu.cx + offset;
       const startY = cNvme1.bottom + 4;
       const isDiscrete = gpu.isDiscrete;
       svgContent += `
-        <line x1="${x}" y1="${startY}" x2="${x}" y2="${cGpu.top}" stroke="${copperBase}" stroke-width="2.5" opacity="${isDiscrete ? '1' : '0.25'}" />
-        ${isDiscrete ? `<line x1="${x}" y1="${startY}" x2="${x}" y2="${cGpu.top}" stroke="${indigoBus}" stroke-width="1.5" class="trace-bus-fast" style="animation-delay: ${idx * 0.15}s" />` : ''}
-        <circle cx="${x}" cy="${cGpu.top - 2}" r="2" fill="${goldVia}" opacity="${isDiscrete ? '1' : '0.3'}" />
+        <line x1="${x}" y1="${startY}" x2="${x}" y2="${cGpu.top}" stroke="${copperBase}" stroke-width="2.5" opacity="${isDiscrete ? '1' : '0.4'}" />
+        <line x1="${x}" y1="${startY}" x2="${x}" y2="${cGpu.top}" stroke="${isDiscrete ? indigoBus : cyanBus}" stroke-width="1.5" class="trace-bus-fast" style="animation-delay: ${idx * 0.15}s" />
+        <circle cx="${x}" cy="${cGpu.top - 2}" r="2" fill="${goldVia}" opacity="1" />
       `;
     });
 
-    const ramLabel = ram.isSingleChannel ? 'DDR5_CH_A [32-BIT]' : 'DDR5_CH_A/B [64-BIT]';
-    const gpuLabel = gpu.isDiscrete ? 'PCIe 4.0 x16 [DIRECT CPU LINK]' : 'PCIe 4.0 x16 [STANDBY - NO CARD]';
+    const gpuLabel = gpu.isDiscrete ? 'PCIe 4.0 x16 [DIRECT CPU LINK]' : 'SYSTEM BUS [RING / iGPU ACTIVE]';
 
     svgContent += `
-      <text x="${(cCpu.right + cRam.left) / 2}" y="${cCpu.cy - 14}" fill="${ram.isSingleChannel ? '#f59e0b' : cyanBus}" font-family="JetBrains Mono" font-size="8" font-weight="bold" text-anchor="middle" letter-spacing="0.5">${ramLabel}</text>
-      <text x="${cCpu.cx}" y="${(cNvme1.bottom + cGpu.top) / 2}" fill="${gpu.isDiscrete ? indigoBus : '#64748b'}" font-family="JetBrains Mono" font-size="8.5" font-weight="bold" text-anchor="middle" letter-spacing="0.5">${gpuLabel}</text>
+      <text x="${(cCpu.right + cRam.left) / 2}" y="${cCpu.cy - 14}" fill="${ram.isSingleChannel ? '#f59e0b' : cyanBus}" font-family="JetBrains Mono" font-size="8" font-weight="bold" text-anchor="middle" letter-spacing="0.5">${busTypeLabel}</text>
+      <text x="${cCpu.cx}" y="${(cNvme1.bottom + cGpu.top) / 2}" fill="${gpu.isDiscrete ? indigoBus : cyanBus}" font-family="JetBrains Mono" font-size="8.5" font-weight="bold" text-anchor="middle" letter-spacing="0.5">${gpuLabel}</text>
     `;
 
     svg.innerHTML = svgContent;
@@ -202,7 +209,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
               </div>
             </motion.div>
 
-            {/* Socket AM5 Central Core */}
+            {/* Socket Central Core */}
             <motion.div 
               ref={nodeCpuRef}
               whileHover={{ scale: 1.02 }}
@@ -210,14 +217,14 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
               className="col-span-4 dark:bg-sky-950/60 bg-sky-100/90 hover:border-sky-500 transition p-3.5 rounded-xl border-2 dark:border-sky-500/70 border-sky-400 tactile-chip flex flex-col items-center justify-center text-center relative group cursor-pointer"
             >
               <div className="absolute -top-2 px-2 py-0.2 dark:bg-sky-900 bg-sky-600 text-white rounded text-[9px] font-mono font-extrabold shadow-md">
-                LGA 1718 SOCKET
+                {socketLabel}
               </div>
               <Cpu className="w-8 h-8 text-sky-500 mb-0.5" />
-              <span className="text-xs font-extrabold dark:text-white text-slate-900">AMD AM5 Core</span>
+              <span className="text-xs font-extrabold dark:text-white text-slate-900">{archFamily}</span>
               <span className="text-xs text-sky-700 dark:text-sky-300 font-mono font-extrabold truncate w-full">{cpu.name}</span>
             </motion.div>
 
-            {/* 4x DDR5 DIMM Slot Bank */}
+            {/* DIMM Slot Bank */}
             <motion.div 
               ref={nodeRamRef}
               whileHover={{ scale: 1.02 }}
@@ -233,6 +240,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
                 </span>
               </div>
 
+              {/* Slots */}
               <div className="grid grid-cols-4 gap-1 my-1.5">
                 {ram.slots.map((s, idx) => (
                   <div 
@@ -251,6 +259,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
             </motion.div>
           </div>
 
+          {/* MIDDLE ROW: Storage */}
           <div className="grid grid-cols-3 gap-3 my-0.5 z-10">
             <motion.div 
               ref={nodeNvme1Ref}
@@ -263,8 +272,8 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold dark:text-white text-slate-900 truncate">M.2_1 (CPU)</span>
-                  <span className="text-[9px] font-mono px-1 py-0.2 dark:bg-sky-950 dark:text-sky-300 bg-sky-100 text-sky-800 rounded font-bold">Gen4 x4</span>
+                  <span className="text-[11px] font-bold dark:text-white text-slate-900 truncate">DISK #1</span>
+                  <span className="text-[9px] font-mono px-1 py-0.2 dark:bg-sky-950 dark:text-sky-300 bg-sky-100 text-sky-800 rounded font-bold">ACTIVE</span>
                 </div>
                 <p className="text-xs dark:text-slate-200 text-slate-800 font-mono truncate font-bold">{storage.m2_1.name}</p>
                 <div className="flex justify-between text-[10px] dark:text-slate-400 text-slate-600 font-mono">
@@ -287,19 +296,19 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold dark:text-white text-slate-900 truncate">M.2_2 (PCH)</span>
+                  <span className="text-[11px] font-bold dark:text-white text-slate-900 truncate">DISK #2</span>
                   <span className={`text-[9px] font-mono px-1 py-0.2 rounded font-bold ${
                     storage.m2_2.isPopulated 
                       ? 'dark:bg-indigo-950 dark:text-indigo-300 bg-indigo-100 text-indigo-800' 
                       : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
                   }`}>
-                    {storage.m2_2.isPopulated ? 'Gen4 x4' : 'EMPTY'}
+                    {storage.m2_2.isPopulated ? 'ACTIVE' : 'EMPTY'}
                   </span>
                 </div>
                 <p className="text-xs dark:text-slate-200 text-slate-800 font-mono truncate font-bold">{storage.m2_2.name}</p>
                 <div className="flex justify-between text-[10px] dark:text-slate-400 text-slate-600 font-mono">
                   <span className={storage.m2_2.isPopulated ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}>
-                    {storage.m2_2.isPopulated ? storage.m2_2.speedRead : 'PCIe 4.0 x4 Available'}
+                    {storage.m2_2.isPopulated ? storage.m2_2.speedRead : 'Expansion Bay Available'}
                   </span>
                   <span className="text-slate-400">{storage.m2_2.isPopulated ? `${storage.m2_2.tempC}°C` : '--'}</span>
                 </div>
@@ -307,12 +316,12 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
             </motion.div>
 
             <div className="dark:bg-slate-900/40 bg-slate-100/70 p-2.5 rounded-xl border border-dashed dark:border-slate-800 border-slate-300 flex flex-col items-center justify-center text-center">
-              <span className="text-[10px] font-mono text-slate-400 font-bold">M.2_3 (PCIe 4.0 x4)</span>
+              <span className="text-[10px] font-mono text-slate-400 font-bold">Storage Bay #3</span>
               <span className="text-[9px] text-slate-500 mt-0.5">[Available for Upgrade]</span>
             </div>
           </div>
 
-          {/* BOTTOM ROW: Primary PCIe x16 GPU Slot */}
+          {/* BOTTOM ROW: GPU / Display Adapter */}
           <motion.div 
             ref={nodeGpuRef}
             whileHover={{ scale: 1.01 }}
@@ -321,17 +330,19 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
           >
             <div className="flex items-center gap-3">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 ${
-                gpu.isDiscrete ? 'bg-indigo-500/20 text-indigo-500' : 'bg-slate-500/20 text-slate-400'
+                gpu.isDiscrete ? 'bg-indigo-500/20 text-indigo-500' : 'bg-sky-500/20 text-sky-500'
               }`}>
                 {gpu.isDiscrete ? <Monitor className="w-4 h-4" /> : <Cpu className="w-4 h-4" />}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold text-sky-500 uppercase tracking-wider">PCIe Slot #1</span>
+                  <span className="text-[11px] font-bold text-sky-500 uppercase tracking-wider">
+                    {gpu.isDiscrete ? 'PCIe Discrete GPU' : 'Integrated Graphics Engine'}
+                  </span>
                   <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-extrabold ${
                     gpu.isDiscrete 
                       ? 'dark:bg-emerald-950 dark:text-emerald-300 bg-emerald-100 text-emerald-800' 
-                      : 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
+                      : 'dark:bg-sky-950 dark:text-sky-300 bg-sky-100 text-sky-800'
                   }`}>
                     {gpu.pcieLink}
                   </span>
@@ -340,7 +351,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
                   {gpu.name}
                 </h3>
                 <p className="text-[11px] dark:text-slate-300 text-slate-600 font-mono truncate">
-                  {gpu.vram} • {gpu.rebarActive ? 'ReBAR Active' : 'Shared Memory'} • {gpu.tempC}°C
+                  {gpu.vram} • {gpu.rebarActive ? 'ReBAR Active' : 'Direct System Memory'} • {gpu.tempC}°C
                 </p>
               </div>
             </div>

@@ -1,5 +1,5 @@
 export type PersonaType = 'dev' | 'creator' | 'esports' | 'silent';
-export type RigProfileType = 'full' | 'missing';
+export type RigProfileType = 'live' | 'full' | 'missing';
 export type LanguageType = 'EN' | 'VI';
 export type ThemeType = 'dark' | 'light';
 
@@ -35,6 +35,7 @@ export interface HardwareTelemetryState {
   hostName: string;
   uptime: string;
   busFrequencyHz: number;
+  isLiveDetected?: boolean;
   cpu: {
     name: string;
     cores: number;
