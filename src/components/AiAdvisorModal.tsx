@@ -31,6 +31,7 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
   onClose
 }) => {
   const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem('aerospec_gemini_key') || '');
+  const [draftApiKey, setDraftApiKey] = useState<string>('');
   const [showKeyInput, setShowKeyInput] = useState<boolean>(false);
   const [inputMessage, setInputMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -44,12 +45,21 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
 
   if (!isOpen) return null;
 
-  const saveApiKey = (key: string) => {
-    const trimmed = key.trim();
+  const saveApiKey = () => {
+    const trimmed = draftApiKey.trim();
+    if (!trimmed) return;
     setApiKey(trimmed);
     localStorage.setItem('aerospec_gemini_key', trimmed);
+    setDraftApiKey('');
     setShowKeyInput(false);
     soundFx.playChime();
+  };
+
+  const clearApiKey = () => {
+    setApiKey('');
+    setDraftApiKey('');
+    localStorage.removeItem('aerospec_gemini_key');
+    soundFx.playClick();
   };
 
   const quickQuestions = lang === 'EN' ? [
@@ -268,20 +278,36 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
                   Lấy API Key miễn phí tại Google AI Studio →
                 </a>
               </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                {lang === 'EN'
+                  ? 'Your key is stored locally in this app profile on this PC. It is sent only to the Google Gemini API when you ask a question.'
+                  : 'Key được lưu cục bộ trong profile ứng dụng này trên máy của bạn. Key chỉ được gửi tới Google Gemini API khi bạn đặt câu hỏi.'}
+              </p>
               <div className="flex items-center gap-2">
                 <input
                   type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
+                  aria-label="Gemini API Key"
+                  value={draftApiKey}
+                  onChange={(e) => setDraftApiKey(e.target.value)}
                   placeholder="Dán mã API Key (AQ.Ab8... hoặc AIzaSy...)"
                   className="flex-1 px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 font-mono"
                 />
                 <button
-                  onClick={() => saveApiKey(apiKey)}
+                  onClick={saveApiKey}
+                  disabled={!draftApiKey.trim()}
                   className="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold rounded-xl transition cursor-pointer"
                 >
-                  Lưu Key
+                  {lang === 'EN' ? 'Save API Key' : 'Lưu API Key'}
                 </button>
+                {apiKey && (
+                  <button
+                    type="button"
+                    onClick={clearApiKey}
+                    className="px-4 py-2 bg-rose-950 hover:bg-rose-900 text-rose-200 border border-rose-800 text-xs font-bold rounded-xl transition cursor-pointer"
+                  >
+                    {lang === 'EN' ? 'Clear API Key' : 'Xóa API Key'}
+                  </button>
+                )}
               </div>
             </div>
           )}

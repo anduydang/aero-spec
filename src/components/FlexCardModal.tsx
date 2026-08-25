@@ -239,7 +239,7 @@ export const FlexCardModal: React.FC<FlexCardModalProps> = ({
               {/* Card Footer Signature */}
               <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 pt-1 border-t border-slate-800/60">
                 <span>VERIFIED SILICON TELEMETRY</span>
-                <span>AEROSPEC STUDIO V2.6</span>
+                <span>AEROSPEC STUDIO V2.6.0</span>
               </div>
 
             </div>

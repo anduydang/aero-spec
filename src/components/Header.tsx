@@ -136,7 +136,7 @@ export const Header: React.FC<HeaderProps> = ({
             <h1 className="text-base font-black tracking-tight flex items-center gap-1 theme-title leading-none">
               AeroSpec <span className="theme-primary-text">Pro</span>
             </h1>
-            <span className="px-1.5 py-0.5 text-[10px] font-bold theme-badge-primary rounded-full font-mono">v2.6</span>
+            <span className="px-1.5 py-0.5 text-[10px] font-bold theme-badge-primary rounded-full font-mono">v2.6.0</span>
             <span className={`px-2 py-0.5 text-[10px] font-bold border rounded-full font-mono flex items-center gap-1 ${statusClasses}`}>
               <Radio className={`w-3 h-3 ${telemetryStatus.status === 'scanning' ? 'animate-pulse' : ''}`} />
               {status.label}

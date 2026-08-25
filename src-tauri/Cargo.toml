@@ -1,6 +1,6 @@
 [package]
 name = "aero-spec"
-version = "0.1.0"
+version = "2.6.0"
 description = "AeroSpec Pro - Neural Hardware Architecture Studio"
 authors = ["AeroSpec Team"]
 edition = "2021"
