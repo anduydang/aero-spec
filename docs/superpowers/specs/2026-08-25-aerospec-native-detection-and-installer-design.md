@@ -2,9 +2,9 @@
 
 ## Goal
 
-Turn AeroSpec into a trustworthy personal Windows hardware viewer: show every component Windows can actually identify, expose useful live sensors when a supported provider is available, keep unavailable data honest, remain visually composed in a maximized Full-HD Tauri window, and ship a usable NSIS Setup executable.
+Turn AeroSpec into a trustworthy personal Windows hardware viewer: show every component Windows can actually identify, expose accurate NVIDIA telemetry when the installed driver supports it, keep unavailable data honest, remain visually composed in a maximized Full-HD Tauri window, and ship a usable NSIS Setup executable.
 
-This design extends and supersedes the hardware-detection exclusions in `2026-08-25-aerospec-trust-ui-refresh-design.md`. Its trust and scoring rules remain in force.
+This design extends and supersedes the hardware-detection exclusions in `2026-08-25-aerospec-trust-ui-refresh-design.md`. Its trust, capability, privacy, and scoring rules remain in force except where this document is more specific.
 
 ## Evidence From the Current Build
 
@@ -15,7 +15,7 @@ This design extends and supersedes the hardware-detection exclusions in `2026-08
 - The live dashboard previously looked more complete because real results were shallow-merged over a simulated Dell/i5 profile. That fabrication has correctly been removed and must not return.
 - The settings popover combines `absolute` with the shared `.studio-card { position: relative; }` rule. The latter wins, so opening settings makes the header grow dramatically instead of overlaying it.
 - In a maximized 1920x1040 client area, the dashboard is compressed into the upper portion of the window while the lower portion is largely empty. Dense type and fixed card composition make it look stretched rather than intentionally responsive.
-- Standard desktop Windows WMI exposes no dependable generic PSU model or wattage. A conventional PSU without USB/PMBus/vendor telemetry cannot be auto-detected honestly.
+- Standard desktop Windows inventory exposes no dependable generic PSU model or wattage. A conventional PSU without USB/PMBus/vendor telemetry cannot be auto-detected honestly.
 
 ## Considered Approaches
 
@@ -23,149 +23,283 @@ This design extends and supersedes the hardware-detection exclusions in `2026-08
 
 Add more CIM/WMI and PowerShell queries and keep the existing Rust-to-React path.
 
-Pros: smallest installer, simplest maintenance, no helper process.  
-Cons: no reliable CPU/package temperature or board sensors, limited GPU telemetry, and no generic PSU identity.
+Pros: smallest change and no helper process.
 
-### 2. Hybrid inventory plus optional sensor provider — selected
+Cons: incomplete storage/PnP information and inaccurate large NVIDIA VRAM values if only the current classes are used.
 
-Use Windows inventory APIs for component identity, `Get-PhysicalDisk` for storage health, PnP for connected devices, NVIDIA's installed CLI for accurate NVIDIA telemetry, and a bundled LibreHardwareMonitor-based helper for deep sensors. Every provider is independent and reports its own availability.
+### 2. Hybrid Windows inventory plus NVIDIA driver telemetry — selected
 
-Pros: complete everyday inventory, strong RTX data on the target PC, useful deep sensors, graceful degradation, and no invented values.  
-Cons: the helper adds packaging work and may require elevation for some low-level sensors.
+Use Windows CIM/storage/PnP sources for component identity and health, and NVIDIA's installed CLI for NVIDIA-only VRAM and dynamic telemetry. Each section reports availability independently.
 
-### 3. Always-elevated hardware service
+Pros: complete everyday inventory, accurate RTX data on the target PC, no kernel driver, no admin prompt, small installer, and graceful degradation.
 
-Install and run a privileged Windows service that continuously gathers every possible sensor.
+Cons: generic CPU/package temperature, motherboard voltage, and fan telemetry remain unavailable when Windows or a vendor driver does not expose them.
 
-Pros: richest persistent telemetry.  
-Cons: large security and maintenance surface, service lifecycle complexity, mandatory elevation, and disproportionate cost for a personal viewer.
+### 3. Bundle LibreHardwareMonitor or an always-elevated sensor service — rejected for this release
 
-Approach 2 provides the best fidelity-to-complexity ratio. The entire AeroSpec UI will not require administrator privileges. The sensor helper first runs normally; when a sensor requires elevated driver access, AeroSpec reports that limitation and offers an explicit retry with elevation instead of prompting on every launch.
+This could expose more low-level sensors, but the stable library can load a privileged hardware driver that Windows Defender may block. Secure elevation would also require a protected install location, explicit consent, authenticated IPC, driver cleanup, and a substantially larger self-contained .NET payload. A one-shot process does not remove those risks.
 
-## Truth and Provenance Model
+For this personal viewer, AeroSpec will not install, load, allowlist, or ask the user to unblock WinRing0, PawnIO, or another kernel driver. It will not elevate itself or a helper. Deep CPU/mainboard sensors remain explicitly unsupported. This decision can be revisited only in a separate design.
 
-Every displayed field belongs to a source and availability state:
+## Versioned Wire Contract
+
+The Rust command returns a single bounded UTF-8 JSON document. Units are encoded in field names; numeric fields never contain formatted text.
 
 ```ts
-type DataSource = 'windows' | 'nvidia' | 'librehardwaremonitor' | 'manual' | 'simulator';
-type Availability = 'available' | 'unsupported' | 'permission-required' | 'probe-error';
+type ProviderId =
+  | 'windows-inventory'
+  | 'windows-storage'
+  | 'windows-pnp'
+  | 'windows-dynamic'
+  | 'nvidia';
 
-interface SourcedValue<T> {
-  value?: T;
-  source?: DataSource;
-  availability: Availability;
-  updatedAt?: string;
-  note?: string;
+type SectionStatus = 'ok' | 'unsupported' | 'permission-required' | 'error';
+type SnapshotStatus = 'ready' | 'partial' | 'unavailable' | 'error';
+type DataSource = 'windows' | 'nvidia' | 'manual' | 'simulator';
+
+interface ProviderDiagnostic {
+  provider: ProviderId;
+  status: SectionStatus;
+  capturedAt: string;       // RFC 3339 UTC
+  durationMs: number;
+  code?: string;            // allowlisted internal code, max 64 chars
+  message?: string;         // sanitized display text, max 240 chars
+}
+
+interface Section<T> {
+  status: SectionStatus;
+  capturedAt: string;       // RFC 3339 UTC
+  durationMs: number;
+  data: T | null;
+  diagnostic?: ProviderDiagnostic;
+}
+
+interface NativeSnapshotV2 {
+  schemaVersion: 2;
+  snapshotId: string;       // random UUID, not hardware-derived
+  capturedAt: string;       // newest section timestamp, RFC 3339 UTC
+  status: SnapshotStatus;
+  inventory: Section<InventoryData>;
+  storage: Section<StorageData>;
+  pnp: Section<PnpData>;
+  dynamic: Section<DynamicData>;
+  nvidia: Section<NvidiaData>;
+}
+
+interface InventoryData {
+  cpu: CpuDevice | null;
+  motherboard: MotherboardDevice | null;
+  memoryModules: MemoryModule[];
+  displayAdapters: DisplayAdapter[];
+}
+
+interface CpuDevice {
+  localId: string;
+  name: string;
+  manufacturer?: string;
+  physicalCores?: number;
+  logicalProcessors?: number;
+  maxClockMhz?: number;
+  l2CacheKib?: number;
+  l3CacheKib?: number;
+}
+
+interface MotherboardDevice {
+  localId: string;
+  manufacturer?: string;
+  product?: string;
+  version?: string;
+  biosVendor?: string;
+  biosVersion?: string;
+  biosReleaseDate?: string; // YYYY-MM-DD
+}
+
+interface MemoryModule {
+  localId: string;
+  bankLabel?: string;
+  deviceLocator?: string;
+  capacityBytes: number;
+  configuredSpeedMtps?: number;
+  manufacturer?: string;
+  partNumber?: string;
+  serialNumber?: string;    // sensitive, local details only
+}
+
+interface DisplayAdapter {
+  localId: string;
+  pnpInstanceId?: string;   // sensitive, local details only
+  name: string;
+  vendorId?: string;
+  deviceId?: string;
+  subsystemId?: string;
+  pciBusId?: string;
+  driverVersion?: string;
+  wmiAdapterRamBytes?: number;
+}
+
+interface StorageData { devices: StorageDevice[] }
+interface StorageDevice {
+  localId: string;
+  deviceNumber?: number;
+  pnpInstanceId?: string;   // sensitive, local details only
+  model: string;
+  serialNumber?: string;    // sensitive, local details only
+  capacityBytes: number;
+  mediaType?: 'ssd' | 'hdd' | 'unspecified';
+  busType?: string;
+  health?: 'healthy' | 'warning' | 'unhealthy' | 'unknown';
+  operationalStatus?: string[];
+}
+
+interface PnpData {
+  networks: NetworkDevice[];
+  displays: PnpDevice[];
+  inputDevices: PnpDevice[];
+  audioDevices: PnpDevice[];
+}
+interface NetworkDevice {
+  localId: string;
+  name: string;
+  interfaceName?: string;
+  linkSpeedBps?: number;
+  mediaType?: string;
+  macAddress?: string;      // sensitive, local details only
+  connected: boolean;
+}
+interface PnpDevice {
+  localId: string;
+  instanceId?: string;      // sensitive, local details only
+  name: string;
+  category: 'display' | 'keyboard' | 'pointing' | 'audio';
+  manufacturer?: string;
+  status?: string;
+}
+
+interface DynamicData { cpuLoadPercent?: number }
+interface NvidiaData { gpus: NvidiaGpu[] }
+interface NvidiaGpu {
+  localId: string;
+  uuid?: string;            // sensitive, local details only
+  pciBusId?: string;
+  name: string;
+  driverVersion?: string;
+  memoryTotalMib?: number;
+  temperatureC?: number;
+  utilizationPercent?: number;
+  powerDrawW?: number;
+  powerLimitW?: number;
+  graphicsClockMhz?: number;
+  fanSpeedPercent?: number;
 }
 ```
 
-The UI may group adjacent values under one source badge to avoid visual noise. It must never substitute a simulator, estimate, zero, or placeholder sentence for a missing live value. Provider diagnostics remain separate from the friendly component view and are available in Detection Details.
+Arrays are capped at 64 entries per category, strings at 512 UTF-8 bytes before frontend rendering, and the entire payload at 2 MiB. Values outside physical bounds are omitted and create a diagnostic code rather than being clamped into plausibility.
 
-A snapshot can be `ready`, `partial`, `unavailable`, or `error`. A failure in one provider never discards successful data from another provider.
+`ready` means the core Windows inventory succeeded. `partial` means it succeeded but an expected Windows storage/PnP section failed, or an NVIDIA adapter was detected and its NVIDIA probe failed. `unavailable` means the command is running outside supported Windows/Tauri conditions. `error` means no usable core inventory was returned. An absent NVIDIA adapter yields `nvidia.status = unsupported` and does not make the snapshot partial.
 
-## Native Detection Architecture
+## Provider and Identity Rules
 
-### Windows inventory probe
+Windows inventory, Windows storage, Windows PnP, Windows dynamic load, and NVIDIA are separate providers even if several are collected by one fixed PowerShell script. Their errors and timestamps remain independent.
 
-Replace the delimiter-based PowerShell output with one versioned JSON document. Each section is wrapped in its own `try/catch`, and the Rust launcher records process exit code, stderr, timeout, and per-section errors.
+- Windows is authoritative for CPU, board, DIMM, storage, network, display, and connected-device identity.
+- NVIDIA is authoritative only for matched NVIDIA VRAM, driver, temperature, utilization, power, clock, and fan fields. It does not overwrite the Windows PnP identity.
+- GPU joins prefer an exact PCI bus ID, then an exact vendor/device/subsystem tuple plus PnP location. A one-to-one name fallback is allowed only when exactly one NVIDIA device exists on each side. Ambiguous matches stay separate and emit `GPU_JOIN_AMBIGUOUS`.
+- Storage joins use Windows disk/device-number associations and PnP instance IDs, never model name alone.
+- PnP entries deduplicate by instance ID. When it is missing, category plus normalized manufacturer/name is the fallback and the first non-empty value wins.
+- A field keeps the source that supplied it. Later provider failure never overwrites a last successful value with zero or a simulator value.
 
-The inventory contains:
+## Detection and Process Security
 
-- CPU identity, physical/logical cores, maximum clock, current load, L2 cache, and L3 cache.
-- Baseboard manufacturer, product, version, and BIOS vendor/version/date. PowerShell JSON dates are parsed from epoch milliseconds before conventional date formats are attempted.
-- Every populated DIMM with bank/device locator, capacity, configured speed, manufacturer, part number, and serial when available. Channel topology stays explicitly labelled as inferred.
-- Every physical disk with friendly/model name, serial where available, capacity, media type, bus type, operational status, and health status. The frontend receives an array and never truncates it.
-- Display adapters with WMI identity and driver data as a fallback.
-- Active physical network adapters with interface name, link speed, MAC address, and media type.
-- Present monitors, keyboards, pointing devices, and audio endpoints/controllers from PnP. Entries are filtered to useful device classes, normalized, and deduplicated by instance ID or normalized name.
+### Windows providers
 
-PowerShell is invoked with a fixed script owned by the application; no user-controlled text is inserted into a shell command.
+The inventory script emits one versioned object; every provider block has its own `try/catch`. BIOS dates parse PowerShell epoch milliseconds first and conventional dates second. Storage uses `Get-PhysicalDisk` plus Windows disk associations. PnP queries collect active physical network adapters and present display, keyboard, pointing, and audio classes, then filter and deduplicate them.
 
-### NVIDIA probe
+Rust resolves Windows PowerShell only from the system Windows directory returned by the OS API: `System32\WindowsPowerShell\v1.0\powershell.exe`. It never uses `PATH`, a user-provided executable, or user-controlled script text. The script is embedded or written to an application-owned bounded input, and all arguments are fixed.
 
-When `nvidia-smi` is installed, Rust invokes it directly with a fixed `--query-gpu` list and CSV output. The probe supplies full dedicated VRAM, temperature, utilization, current/power-limit watts, graphics clock, fan speed where supported, and driver version. A short timeout and parser fixtures protect the main refresh loop. WMI remains the identity fallback when the command is absent or unsupported.
+### NVIDIA provider
 
-### LibreHardwareMonitor helper
+Rust resolves `nvidia-smi.exe` only from known NVIDIA/System32 installation locations, obtains a canonical absolute path, rejects reparse-point escapes, and verifies the file with Windows `WinVerifyTrust`. It never executes the first PATH match.
 
-Deep CPU, motherboard, GPU, memory-controller, fan, voltage, and storage sensors are gathered by a small Windows x64 helper built against LibreHardwareMonitorLib.
+The exact query is:
 
-- It is a one-shot, read-only JSON process rather than a background service.
-- The helper has no network access and accepts only fixed flags such as `--snapshot`.
-- Tauri bundles the published helper as a sidecar/resource. The main Rust process validates its expected path, applies a timeout, reads bounded stdout, and terminates it after the snapshot.
-- The build publishes the helper self-contained so end users do not need a separately installed .NET runtime. Build documentation records the resulting installer-size cost.
-- AeroSpec attempts an unelevated snapshot first. If low-level access is denied, the UI marks only affected sensors `permission-required` and exposes an explicit "Retry deep sensors as administrator" action.
-- If building or executing the helper is unavailable, the rest of the detector and installer still build. The release checklist, however, may call the final package complete only when the helper inclusion is verified or the release is explicitly labelled "inventory-only".
-
-Sensor matching uses normalized hardware identifiers and conservative name matching. An unmatched sensor is omitted instead of attached to the wrong component.
-
-### PSU handling
-
-Auto-detection is attempted only if a provider returns an explicit PSU device or sensor. AeroSpec never derives wattage or model from total system draw.
-
-For normal desktop PSUs, the right panel presents a compact manual profile with optional brand/model, rated wattage, efficiency rating, and note. It is stored locally under a versioned key and labelled `Manual`. Sensor-only PSU fields such as input/output power remain unavailable unless a provider actually exposes them.
-
-## Frontend Data and Rendering
-
-The live contract changes from fixed mock-shaped slots to arrays for resources that have variable cardinality:
-
-```ts
-interface NativeSnapshot {
-  cpu?: NativeCpu;
-  motherboard?: NativeMotherboard;
-  memoryModules: NativeMemoryModule[];
-  gpus: NativeGpu[];
-  storageDevices: NativeStorageDevice[];
-  networks: NativeNetwork[];
-  displays: NativeDevice[];
-  inputDevices: NativeDevice[];
-  audioDevices: NativeDevice[];
-  sensors: NativeSensor[];
-  diagnostics: ProviderDiagnostic[];
-}
+```text
+--query-gpu=uuid,pci.bus_id,name,memory.total,temperature.gpu,utilization.gpu,power.draw,power.limit,clocks.current.graphics,fan.speed,driver_version --format=csv,noheader,nounits
 ```
 
-Adapters remain pure and unit-testable. Simulator profiles use the same UI model but are permanently marked `simulator`; live adapters cannot read simulator defaults.
+CSV `N/A`, `[Not Supported]`, blank, non-finite, or out-of-range values become absent fields with diagnostics. The parser handles quoted names and invariant decimal points.
 
-Storage cards render from `storageDevices[]`. The board schematic maps detected disks to available visual bays, and an upgrade bay appears only when the detected board/storage model supports presenting one as an explicit recommendation. Scoring consumes detected storage values and never assumes a fabricated throughput.
+### Child-process limits
 
-The right column is split into independent sections:
+- Static Windows collection: 12-second timeout, 2 MiB stdout, 256 KiB stderr.
+- NVIDIA/dynamic collection: 2-second timeout per process, 256 KiB stdout, 64 KiB stderr.
+- Output is decoded as strict UTF-8 after PowerShell is instructed to emit UTF-8; invalid output is a provider error.
+- Only one static and one dynamic collection may be in flight. A repeated refresh coalesces onto the current request.
+- Processes are assigned to a Windows Job Object so timeout or app exit terminates the complete process tree.
+- Raw stdout/stderr is never logged. Diagnostics map failures to fixed codes and short redacted messages.
+
+## Refresh Protocol
+
+- Static inventory/storage/PnP runs at startup and on explicit refresh only.
+- Windows CPU load and NVIDIA telemetry run every 3 seconds while the window is visible; polling pauses while hidden/minimized and resumes immediately when visible.
+- A dynamic value is fresh through 10 seconds after its provider timestamp, stale from 10 through 30 seconds, and unavailable after 30 seconds.
+- During the stale window the last success remains visible with a `Stale` badge and age. A failed refresh never produces zero.
+- Frontend requests include a monotonic generation number. Older completions cannot overwrite a newer explicit refresh.
+- `capturedAt` is provider completion time in UTC; snapshot time is the maximum contained timestamp. UI age uses a monotonic elapsed timer after receipt to avoid wall-clock jumps.
+
+## PSU and Storage Scoring
+
+Auto-detection is attempted only when Windows reports an explicit software-visible PSU device. AeroSpec never derives wattage or model from system power draw.
+
+For conventional desktop PSUs, the right panel provides a local manual profile: brand/model, rated wattage, efficiency rating, and note. It is stored under `aerospec.psu-profile.v1` and labelled `Manual`. Sensor-only PSU fields remain unavailable.
+
+No selected provider measures storage throughput. Therefore the live storage performance factor remains unavailable and is excluded by the existing score renormalization rule. Health, bus type, and media type are descriptive only. The live UI removes the fabricated fixed upgrade bay because Windows cannot reliably enumerate free motherboard/storage slots. Simulator profiles may show a simulated upgrade bay only when clearly labelled Simulation.
+
+## Frontend Rendering
+
+Adapters remain pure and unit-testable. Simulator profiles use the same view model but remain permanently marked `simulator`; live adapters cannot import or read simulator defaults.
+
+Storage cards render every `storage.devices[]` item, subject only to the documented safety cap. The right column contains independent sections:
 
 1. Power supply: detected, manual, or honest unavailable state.
 2. Network: active adapters and link state.
-3. Connected devices: displays, input, and audio summaries with expandable details.
+3. Connected devices: displays, input, and audio summaries with expandable local details.
 
-A missing PSU must not hide network or peripheral results.
+A missing PSU never hides network or device results. Adjacent values may share a small `Windows`, `NVIDIA`, or `Manual` badge; unsupported sensor groups show one concise unavailable state rather than rows of dashes.
+
+## Privacy Boundary
+
+Serial numbers, MAC addresses, PnP instance IDs, NVIDIA UUIDs, PCI locations, host names, snapshot IDs, local paths, and raw diagnostics are sensitive-local fields.
+
+- They may appear only in an explicitly expanded local Detection Details/component-details view.
+- Gemini prompts use an allowlist of marketing component name, capacity, speed, health category, and non-identifying load/temperature/power values. They exclude every sensitive-local field.
+- Flex Card/export uses the same allowlist and excludes host name by default. Adding identifying data requires a separate explicit opt-in not included here.
+- Application logs contain provider, fixed error code, status, duration, and schema version only. They never contain raw command output or sensitive-local values.
+- Automated screenshots use synthetic fixture identifiers. AeroSpec does not upload screenshots.
+- A sanitized message is selected from fixed application-owned text for a known error code. Unknown stderr becomes `PROVIDER_FAILED`; paths, command lines, account names, and raw exception text are not displayed or persisted.
 
 ## Full-HD and Settings UI
 
 ### App shell
 
-- The shell uses a minimum viewport height and a column layout; the main dashboard grows to consume remaining space and the footer follows content naturally.
-- At wide desktop sizes, the three columns stretch together and distribute useful detail vertically. Large dead space below a compressed dashboard is removed.
-- Side panels retain a readable desktop width, while the schematic receives flexible space. Core text is at least 12px and device values remain selectable.
-- Vertical scrolling remains available when scaling or content requires it; no root-level overflow clipping may conceal component data.
-- The 1920x1080 release check covers both 100% and 125% Windows display scaling where the environment permits.
+- The shell uses `min-height: 100vh` and a column layout; the main dashboard grows to consume the space between header and footer.
+- At wide desktop sizes, the three columns stretch together. The bottom of the primary dashboard remains within 96 CSS px of the footer and no unintentional blank band between them exceeds 20% of viewport height.
+- Side panels retain readable width while the schematic receives flexible space. Core information text is at least 12 CSS px; 10–11px is reserved for short labels/badges.
+- Vertical scrolling remains available when scaling or content requires it; root overflow clipping may not conceal component data.
 
 ### Settings surface
 
-Settings renders through a portal as a fixed-position overlay anchored to the settings button on desktop and as a compact sheet on narrow windows. It does not share a class whose positioning can be overridden by card styles.
+Settings renders through a portal as a fixed-position overlay anchored to its button on desktop and a compact sheet below 768 CSS px. It does not share a class whose positioning can be overridden by card styles.
 
-Opening settings must not change header or dashboard geometry. The surface includes theme/language/sound controls, manual PSU details, detector status, and the elevated-sensor retry. It supports Escape, outside-click close, focus containment, and focus restoration.
-
-## Refresh and Error Behavior
-
-- Static inventory is refreshed on startup and on explicit refresh.
-- Lightweight load/GPU/sensor values refresh on the existing interval without re-enumerating all PnP devices each tick.
-- A provider retains its last successful value briefly while showing a stale timestamp; it does not jump to zero on a transient error.
-- After the stale window, the value becomes unavailable and the diagnostic explains why.
-- Errors shown in the normal dashboard are concise. Detection Details exposes provider name, timestamp, duration, exit status, and a sanitized message.
+Opening settings must not change the header or dashboard bounding boxes by more than 1 CSS px. The surface includes theme/language/sound controls, the manual PSU profile, and Detection Details. It supports Escape, outside-click close, focus containment, and focus restoration.
 
 ## Packaging
 
-- Tauri produces an x64 NSIS `AeroSpec Pro_*_x64-setup.exe` as the primary artifact.
-- The helper binary and required license notices are included and verified from the installed application directory.
-- The app and installer remain unsigned for this personal build, so the handoff explicitly notes that Windows SmartScreen may warn.
-- Package version remains aligned across npm, Tauri, and UI. The installer is smoke-tested by launching the installed executable, loading a snapshot, opening settings, and closing cleanly.
+- `bundle.targets` changes from `all` to `nsis`; no MSI is required.
+- NSIS uses `installMode: currentUser`, so neither installation nor app launch requests administrator rights. The app installs under the normal Tauri current-user location.
+- There is no external binary, .NET runtime, sensor helper, service, scheduled task, or kernel driver in this release.
+- The app and installer remain unsigned for this personal build, so handoff states that Windows SmartScreen may warn.
+- Package versions remain aligned across npm, Tauri, and UI.
+- Release verification installs normally, launches the installed executable, collects a snapshot, opens settings, closes cleanly, uninstalls, and confirms the app directory and shortcuts are removed. It also asserts that no AeroSpec service/driver/task was created.
 
 ## Test-Driven Implementation
 
@@ -174,47 +308,61 @@ Opening settings must not change header or dashboard geometry. The surface inclu
 - Parse one-item and array-shaped PowerShell JSON sections.
 - Parse PowerShell epoch dates and reject impossible dates.
 - Preserve all three or more physical disks.
-- Parse representative NVIDIA CSV with 8 GiB VRAM and unsupported fields.
-- Merge provider results without wiping successful sections.
-- Report timeout, non-zero exit, invalid JSON, and missing commands as provider diagnostics.
-
-### Helper tests
-
-- Serialize a deterministic fixture snapshot.
-- Normalize sensor identifiers and reject ambiguous component matches.
-- Return structured permission and provider errors without crashing.
+- Parse representative quoted NVIDIA CSV with 8 GiB VRAM and unsupported fields.
+- Join GPU providers deterministically and report ambiguity.
+- Aggregate statuses without treating a non-NVIDIA machine as partial.
+- Retain last success through stale time and reject older generations.
+- Report timeout, oversized output, non-zero exit, invalid UTF-8/JSON, failed trust verification, and missing commands using fixed diagnostics.
+- Redact sensitive values from diagnostics and logs.
 
 ### TypeScript/Vitest tests
 
-- Map all variable-length device arrays and provenance.
+- Map all variable-length arrays, units, statuses, and provenance.
 - Keep missing live fields unavailable rather than inheriting simulator content.
 - Keep PSU manual values labelled manual and isolated from simulation.
-- Render independent power, network, and device states.
+- Exclude storage performance when no throughput exists.
+- Exclude sensitive-local fields from AI and Flex Card allowlists.
+- Render power, network, and device states independently.
 
 ### Playwright and Tauri review
 
-- Browser fixtures exercise three disks, an 8 GiB GPU, network, monitor, input, audio, manual PSU, provider errors, and long device names.
-- At 1920x1080, opening settings leaves the header bounding box unchanged and creates no horizontal overflow.
+- Browser fixtures exercise three disks, an 8 GiB GPU, network, monitor, input, audio, manual PSU, provider errors, long names, stale data, and privacy redaction.
+- At 1920x1080, opening settings changes the header bounding box by at most 1 CSS px, creates no horizontal overflow, retains 12px core type, and meets the dashboard/footer blank-space thresholds.
 - Existing 1024x700 and 1440x900 interaction, accessibility, theme, and screenshot coverage continues to pass.
-- The final review is repeated in the actual Tauri/WebView2 window maximized on Full HD, because browser rendering alone is not the release gate.
+- Native 100% procedure: set Windows scaling to 100%, relaunch and maximize Tauri on 1920x1080, capture the client screenshot and bounding-box probe, and exercise settings/details.
+- Native 125% procedure: set scaling to 125%, sign out/relaunch if Windows requires it, repeat the same checks, then restore the original setting. If changing the host setting is unavailable, the release notes explicitly mark only this manual check unverified; browser emulation is supplemental, not a substitute.
+
+## Reproducible Target-Machine Evidence
+
+The repository stores redacted raw-provider fixtures for the target machine. Serial numbers, MACs, UUIDs, host/user names, and PnP instance IDs are replaced with stable fixture tokens before commit. Acceptance compares parsed output with those fixtures rather than relying on remembered values.
+
+Expected fixture facts are conditional on the provider returning them during capture:
+
+- Intel Core i3-12100F, 5,120 KiB L2 and 12,288 KiB L3.
+- Two 8 GiB G.Skill DIMMs at 2,667 MT/s with part numbers `F4-2666C19-8GIS` and `F4-2666C19-8GVR`.
+- RTX 2060 SUPER with 8,192 MiB reported by NVIDIA.
+- Three physical disks: 120 GB SATA SSD, 250 GB SATA disk, and 500 GB NVMe SSD, with Windows-reported health.
+- Active Intel I219-V Ethernet, Acer monitor, Logitech mouse, keyboards, and audio devices when they remain present at capture time.
+
+A hardware item removed or disabled after fixture capture is a documented environmental difference, not a parser failure. Parser tests always use the recorded fixture.
 
 ## Delivery Order
 
 1. Add parser/adapter tests and the versioned snapshot contract.
-2. Implement Windows inventory and NVIDIA probes with diagnostics.
-3. Refactor variable device rendering, PSU profile, and provenance states.
+2. Implement bounded Windows and NVIDIA providers, joining, status aggregation, refresh, and privacy filters.
+3. Refactor variable device rendering, manual PSU, provenance, and live scoring behavior.
 4. Fix the settings portal and Full-HD shell.
-5. Build and integrate the sensor helper; verify graceful fallback and elevation flow.
-6. Run unit, lint, production build, Rust, Playwright, and native visual checks.
-7. Build and smoke-test the NSIS Setup executable, then provide its exact path and checksum.
+5. Run unit, lint, production build, Rust, Playwright, and native visual checks; fix review findings.
+6. Build, install, smoke-test, uninstall, and deliver the NSIS Setup executable with its SHA-256 checksum.
 
 ## Acceptance Criteria
 
-- The target machine shows its i3-12100F cache data, both 8 GiB G.Skill DIMMs with their real part numbers, RTX 2060 SUPER with 8 GiB VRAM, and all three physical disks with bus/health details.
-- At least the active Intel Ethernet adapter, Acer monitor, Logitech mouse, keyboards, and audio devices appear when Windows reports them present.
+- Redacted target-machine capture and parser fixtures satisfy the reproducible facts above; any conditional provider omission is shown as unavailable with a diagnostic rather than guessed.
 - No value from the old Dell/i5 simulator profile appears in Live mode.
-- PSU identity is either explicitly detected, explicitly manual, or explicitly unavailable; it is never guessed.
-- Opening settings does not resize or break the header.
-- A maximized Full-HD Tauri window has readable type, no concealed information or horizontal overflow, and no large accidental empty lower region.
-- Failure of NVIDIA, LibreHardwareMonitor, PnP, or storage health probing degrades only that provider and remains explainable.
-- The installed NSIS build launches and collects a snapshot, and the delivered Setup `.exe` has a recorded SHA-256 checksum.
+- Every detected disk is rendered; no real array is sliced to two and no fake free bay is shown.
+- PSU identity is explicitly detected, explicitly manual, or explicitly unavailable.
+- Opening settings does not change header/dashboard geometry by more than 1 CSS px.
+- Maximized Full-HD Tauri at 100% passes the overflow, 12px type, 96px footer-gap, and 20%-blank-band thresholds. The 125% check is passed or explicitly identified as the only environment-blocked manual check.
+- Overlapping refreshes, stale expiry, NVIDIA absence/failure, ambiguous GPU matching, oversized/invalid output, and privacy redaction are covered by automated tests.
+- No test or release flow requests UAC, installs a service/driver/task, or asks Windows Defender to allow a vulnerable driver.
+- The installed NSIS build launches and collects a snapshot; uninstall removes its installed files/shortcuts; the delivered Setup `.exe` has a recorded SHA-256 checksum.
