@@ -30,6 +30,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
   const busTypeLabel = isDdr4 
     ? (ram.isSingleChannel ? 'DDR4 SINGLE-CH' : 'DDR4 DUAL-CH')
     : (ram.isSingleChannel ? 'DDR5 SINGLE-CH' : 'DDR5 DUAL-CH');
+  const dimmGridColumns = ram.slots.length <= 2 ? 'grid-cols-2' : 'grid-cols-4';
 
   const drawBuses = useCallback(() => {
     const svg = svgRef.current;
@@ -277,18 +278,20 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
               </div>
 
               {/* Slots */}
-              <div className="grid grid-cols-4 gap-1 my-1">
+              <div data-testid="dimm-slot-grid" className={`grid ${dimmGridColumns} gap-1 my-1`}>
                 {ram.slots.map((s, idx) => (
                   <div 
                     key={idx}
-                    className={`h-10 rounded border flex flex-col items-center justify-between p-0.5 text-[9px] font-mono font-bold ${
+                    className={`h-10 min-w-0 overflow-hidden rounded border flex flex-col items-center justify-between p-0.5 text-[9px] font-mono font-bold ${
                       s.status === 'active' 
                         ? 'theme-btn-grad border-transparent shadow text-white' 
                         : 'bg-black/5 dark:bg-slate-950 border-dashed border-black/15 dark:border-slate-800 theme-muted'
                     }`}
                   >
-                    <span>{s.slot}</span>
-                    <span className="text-[8px]">{s.status === 'active' ? s.size : '[EMPTY]'}</span>
+                    <span className="block w-full truncate text-center" title={s.slot}>{s.slot}</span>
+                    <span className="block w-full truncate text-center text-[8px]" title={s.status === 'active' ? s.size : 'Empty'}>
+                      {s.status === 'active' ? s.size : '[EMPTY]'}
+                    </span>
                   </div>
                 ))}
               </div>
