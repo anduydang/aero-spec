@@ -1,7 +1,8 @@
-import React from 'react';
-import { Cpu, Target, SlidersHorizontal, Globe, Sun, Moon, Sparkles, MousePointerClick, Radio } from 'lucide-react';
+import React, { useState } from 'react';
+import { Cpu, Target, SlidersHorizontal, Globe, Sun, Moon, Sparkles, MousePointerClick, Radio, Bot, Volume2, VolumeX } from 'lucide-react';
 import type { LanguageType, PersonaType, RigProfileType, ThemeType } from '../types/hardware';
 import { i18nData } from '../data/i18nData';
+import { soundFx } from '../utils/soundFx';
 import confetti from 'canvas-confetti';
 
 interface HeaderProps {
@@ -17,6 +18,7 @@ interface HeaderProps {
   onSelectPersona: (p: PersonaType) => void;
   onSelectRig: (r: RigProfileType) => void;
   onOpenFlexCard: () => void;
+  onOpenAiAdvisor: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -32,10 +34,13 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectPersona,
   onSelectRig,
   onOpenFlexCard,
+  onOpenAiAdvisor,
 }) => {
   const dict = i18nData[lang];
+  const [isMuted, setIsMuted] = useState<boolean>(soundFx.isMuted());
 
   const handleExportClick = () => {
+    soundFx.playChime();
     confetti({
       particleCount: 60,
       spread: 60,
@@ -43,6 +48,18 @@ export const Header: React.FC<HeaderProps> = ({
       colors: ['#0ea5e9', '#6366f1', '#10b981', '#f59e0b']
     });
     onOpenFlexCard();
+  };
+
+  const handleAiAdvisorClick = () => {
+    soundFx.playClick();
+    onOpenAiAdvisor();
+  };
+
+  const handleToggleSound = () => {
+    const nextMuted = !isMuted;
+    soundFx.setMuted(nextMuted);
+    setIsMuted(nextMuted);
+    if (!nextMuted) soundFx.playClick();
   };
 
   return (
@@ -92,17 +109,20 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="text-xs font-bold dark:text-slate-300 text-slate-700 hidden lg:inline">{dict.rigMode}</span>
           <select 
             value={rigProfile} 
-            onChange={(e) => onSelectRig(e.target.value as RigProfileType)} 
+            onChange={(e) => {
+              soundFx.playSwitch();
+              onSelectRig(e.target.value as RigProfileType);
+            }} 
             className="bg-transparent text-xs font-bold text-sky-600 dark:text-sky-400 focus:outline-none cursor-pointer"
           >
             <option value="live" className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white font-bold">
-              {lang === 'EN' ? '🖥️ Live PC Hardware (Real Machine WMI Telemetry)' : '🖥️ Phần cứng máy thật (WMI Telemetry tự động)'}
+              {lang === 'EN' ? 'LIVE PC: Host WMI Telemetry' : 'LIVE PC: Phần cứng máy thật (WMI)'}
             </option>
             <option value="full" className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white">
-              {lang === 'EN' ? '🔥 Simulator: Fully Loaded (AMD 7800X3D + RTX 4070 Ti)' : '🔥 Giả lập: Cấu hình đầy đủ (7800X3D + RTX 4070 Ti)'}
+              {lang === 'EN' ? 'SIMULATOR: Fully Loaded Rig (7800X3D + 4070 Ti)' : 'GIẢ LẬP: Cấu hình đầy đủ (7800X3D + 4070 Ti)'}
             </option>
             <option value="missing" className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white">
-              {lang === 'EN' ? '⚡ Simulator: Missing Parts (Single RAM / No dGPU)' : '⚡ Giả lập: Khuyết linh kiện (1 RAM / Không GPU rời)'}
+              {lang === 'EN' ? 'SIMULATOR: Missing Parts (Single RAM / No dGPU)' : 'GIẢ LẬP: Khuyết linh kiện (1 RAM / Không GPU rời)'}
             </option>
           </select>
         </div>
@@ -112,7 +132,10 @@ export const Header: React.FC<HeaderProps> = ({
           <Target className="w-3.5 h-3.5 text-sky-500" />
           <select 
             value={persona} 
-            onChange={(e) => onSelectPersona(e.target.value as PersonaType)} 
+            onChange={(e) => {
+              soundFx.playSwitch();
+              onSelectPersona(e.target.value as PersonaType);
+            }} 
             className="bg-transparent text-xs font-bold dark:text-sky-300 text-sky-700 focus:outline-none cursor-pointer"
           >
             <option value="dev" className="dark:bg-slate-900 bg-white text-slate-900 dark:text-white">Fullstack Dev + Docker + 1440p Gaming</option>
@@ -124,10 +147,36 @@ export const Header: React.FC<HeaderProps> = ({
 
       </div>
 
-      {/* Right Controls: Language + Theme + Export */}
+      {/* Right Controls: AI Advisor + Sound + Language + Theme + Export */}
       <div className="flex items-center gap-2">
+        
+        {/* AI Upgrade Advisor Action */}
+        <button
+          onClick={handleAiAdvisorClick}
+          className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-600 hover:from-indigo-500 hover:to-sky-500 text-white font-bold text-xs flex items-center gap-1.5 transition duration-150 cursor-pointer shadow-md shadow-indigo-500/25"
+        >
+          <Bot className="w-3.5 h-3.5" />
+          <span>{lang === 'EN' ? 'AI Advisor' : 'Tư Vấn Nâng Cấp'}</span>
+        </button>
+
+        {/* Audio FX Toggle */}
+        <button
+          onClick={handleToggleSound}
+          className={`p-2 rounded-xl border text-xs transition cursor-pointer shadow-sm ${
+            isMuted 
+              ? 'dark:bg-slate-900 bg-slate-100 border-slate-300 dark:border-slate-800 text-slate-400' 
+              : 'dark:bg-slate-800 bg-white border-slate-300 dark:border-slate-700 text-sky-500'
+          }`}
+          title={isMuted ? 'Bật âm thanh vi mạch' : 'Tắt âm thanh'}
+        >
+          {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+        </button>
+
         <button 
-          onClick={onToggleLang} 
+          onClick={() => {
+            soundFx.playSwitch();
+            onToggleLang();
+          }} 
           className="px-3 py-1.5 rounded-xl dark:bg-slate-800 dark:hover:bg-slate-750 bg-white hover:bg-slate-100 border dark:border-slate-700 border-slate-300 dark:text-sky-400 text-sky-600 flex items-center gap-1.5 text-xs font-extrabold transition cursor-pointer shadow-sm"
         >
           <Globe className="w-3.5 h-3.5" />
@@ -135,7 +184,10 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         <button 
-          onClick={onToggleTheme} 
+          onClick={() => {
+            soundFx.playSwitch();
+            onToggleTheme();
+          }} 
           className="px-3 py-1.5 rounded-xl dark:bg-slate-800 dark:hover:bg-slate-750 bg-white hover:bg-slate-100 border dark:border-slate-700 border-slate-300 dark:text-amber-400 text-slate-800 flex items-center gap-1.5 text-xs font-bold transition cursor-pointer shadow-sm"
         >
           {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}

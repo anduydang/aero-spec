@@ -6,10 +6,12 @@ import { PsuAndPeripherals } from './components/PsuAndPeripherals';
 import { CopilotFooter } from './components/CopilotFooter';
 import { DeepInspectorDrawer } from './components/DeepInspectorDrawer';
 import { FlexCardModal } from './components/FlexCardModal';
+import { AiAdvisorModal } from './components/AiAdvisorModal';
 import type { LanguageType, PersonaType, RigProfileType, ThemeType, HardwareTelemetryState } from './types/hardware';
 import { liveRigTelemetry, fullRigTelemetry, missingRigTelemetry } from './data/mockData';
 import { getDynamicInspectorItem } from './data/inspectorGenerator';
 import { i18nData } from './data/i18nData';
+import { soundFx } from './utils/soundFx';
 
 export function App() {
   const [theme, setTheme] = useState<ThemeType>('dark');
@@ -18,6 +20,7 @@ export function App() {
   const [rigProfile, setRigProfile] = useState<RigProfileType>('live');
   const [activeInspectorId, setActiveInspectorId] = useState<string | null>(null);
   const [isFlexCardOpen, setIsFlexCardOpen] = useState<boolean>(false);
+  const [isAiAdvisorOpen, setIsAiAdvisorOpen] = useState<boolean>(false);
   const [liveData, setLiveData] = useState<HardwareTelemetryState>(liveRigTelemetry);
 
   // Attempt to invoke native Tauri hardware detection if running in Tauri
@@ -105,6 +108,11 @@ export function App() {
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   const toggleLang = () => setLang(prev => prev === 'EN' ? 'VI' : 'EN');
 
+  const handleInspect = (id: string) => {
+    soundFx.playClick();
+    setActiveInspectorId(id);
+  };
+
   return (
     <div className="p-4 lg:p-6 select-none flex flex-col gap-4 max-w-[1720px] mx-auto min-h-screen">
       {/* Top Clean Studio Header */}
@@ -121,25 +129,26 @@ export function App() {
         onSelectPersona={setPersona}
         onSelectRig={setRigProfile}
         onOpenFlexCard={() => setIsFlexCardOpen(true)}
+        onOpenAiAdvisor={() => setIsAiAdvisorOpen(true)}
       />
 
       {/* 3-Column Core Telemetry Dashboard */}
       <main className="grid grid-cols-12 gap-4">
         <SiliconMetrics 
           telemetry={telemetry}
-          onInspect={setActiveInspectorId}
+          onInspect={handleInspect}
           perCoreLabel={dict.perCore}
         />
 
         <MotherboardSchematic 
           telemetry={telemetry}
           theme={theme}
-          onInspect={setActiveInspectorId}
+          onInspect={handleInspect}
         />
 
         <PsuAndPeripherals 
           telemetry={telemetry}
-          onInspect={setActiveInspectorId}
+          onInspect={handleInspect}
           peripheralsTitle={dict.peripheralsTitle}
         />
       </main>
@@ -162,7 +171,10 @@ export function App() {
         lang={lang}
         lowLevelTitle={dict.lowLevelTitle}
         archTitle={dict.archTitle}
-        onClose={() => setActiveInspectorId(null)}
+        onClose={() => {
+          soundFx.playClick();
+          setActiveInspectorId(null);
+        }}
       />
 
       {/* Holographic Flex Card Export Preview Modal */}
@@ -171,7 +183,21 @@ export function App() {
         telemetry={telemetry}
         lang={lang}
         persona={persona}
-        onClose={() => setIsFlexCardOpen(false)}
+        onClose={() => {
+          soundFx.playClick();
+          setIsFlexCardOpen(false);
+        }}
+      />
+
+      {/* AI Upgrade Advisor & Live Search Modal */}
+      <AiAdvisorModal 
+        isOpen={isAiAdvisorOpen}
+        telemetry={telemetry}
+        lang={lang}
+        onClose={() => {
+          soundFx.playClick();
+          setIsAiAdvisorOpen(false);
+        }}
       />
     </div>
   );
