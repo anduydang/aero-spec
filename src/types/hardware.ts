@@ -38,6 +38,7 @@ export interface NativeHardwareTelemetryPayload {
     cores?: number;
     threads?: number;
     max_clock_mhz?: number;
+    current_clock_mhz?: number;
     current_load_pct?: number;
     per_core_loads?: number[];
   };

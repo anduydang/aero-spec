@@ -226,6 +226,7 @@ export function mergeNativeTelemetry(payload: NativeHardwareTelemetryPayload): H
       name: hasText(cpu?.name) ? cpu.name.trim() : baseline.cpu.name,
       cores: cpu?.cores ?? baseline.cpu.cores,
       threads: cpu?.threads ?? baseline.cpu.threads,
+      avgClockMhz: cpu?.current_clock_mhz ?? baseline.cpu.avgClockMhz,
       maxClockMhz: cpu?.max_clock_mhz ?? baseline.cpu.maxClockMhz,
       currentLoadPct: cpu?.current_load_pct ?? baseline.cpu.currentLoadPct,
       perCoreLoads: cpu?.per_core_loads ?? baseline.cpu.perCoreLoads,

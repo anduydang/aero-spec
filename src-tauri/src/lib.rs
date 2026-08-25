@@ -24,6 +24,7 @@ pub struct LiveCpuInfo {
     pub cores: usize,
     pub threads: usize,
     pub max_clock_mhz: u32,
+    pub current_clock_mhz: u32,
     pub current_load_pct: f32,
     pub per_core_loads: Vec<u32>,
 }
@@ -67,16 +68,48 @@ pub struct LiveHostTelemetry {
     pub disks: Vec<DiskInfo>,
 }
 
+fn parse_bios_release_date(value: &str) -> String {
+    let trimmed = value.trim();
+    if trimmed.len() >= 10 && trimmed.as_bytes().get(4) == Some(&b'-') && trimmed.as_bytes().get(7) == Some(&b'-') {
+        return trimmed[..10].to_string();
+    }
+
+    let digits: String = trimmed.chars().filter(|character| character.is_ascii_digit()).collect();
+    if digits.len() >= 8 {
+        return format!("{}-{}-{}", &digits[0..4], &digits[4..6], &digits[6..8]);
+    }
+
+    "Unknown".to_string()
+}
+
+fn is_discrete_gpu_name(name: &str) -> bool {
+    let lower = name.to_lowercase();
+    lower.contains("nvidia")
+        || lower.contains("geforce")
+        || lower.contains("rtx")
+        || lower.contains("radeon rx")
+}
+
+fn select_preferred_gpu(adapters: &[serde_json::Value]) -> Option<&serde_json::Value> {
+    adapters.iter().max_by_key(|adapter| {
+        adapter
+            .get("Name")
+            .and_then(|name| name.as_str())
+            .map(is_discrete_gpu_name)
+            .unwrap_or(false)
+    })
+}
+
 #[tauri::command]
 fn get_live_hardware_telemetry() -> LiveHostTelemetry {
     let mut sys = System::new_all();
     sys.refresh_all();
 
-    let host_name = System::host_name().unwrap_or_else(|| "DESKTOP-PC".to_string());
+    let host_name = System::host_name().unwrap_or_else(|| "This PC".to_string());
     let os_name = format!(
         "{} {}",
         System::name().unwrap_or_else(|| "Windows".to_string()),
-        System::os_version().unwrap_or_else(|| "11".to_string())
+        System::os_version().unwrap_or_default()
     );
 
     let uptime_secs = System::uptime();
@@ -88,19 +121,19 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
         .cpus()
         .first()
         .map(|c| c.brand().trim().to_string())
-        .unwrap_or_else(|| "Intel(R) Core(TM) i5-8400 CPU".to_string());
+        .unwrap_or_else(|| "Unknown".to_string());
 
-    let cpu_cores = sys.physical_core_count().unwrap_or(6);
+    let cpu_cores = sys.physical_core_count().unwrap_or(0);
     let cpu_threads = sys.cpus().len();
     let cpu_global_load = sys.global_cpu_usage();
     let per_core_loads: Vec<u32> = sys.cpus().iter().map(|c| c.cpu_usage().round() as u32).collect();
 
     let wmi_script = r#"
-        $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1 Name, MaxClockSpeed | ConvertTo-Json -Compress
+        $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1 Name, MaxClockSpeed, CurrentClockSpeed | ConvertTo-Json -Compress
         $board = Get-CimInstance Win32_BaseBoard | Select-Object -First 1 Manufacturer, Product, Version | ConvertTo-Json -Compress
         $bios = Get-CimInstance Win32_BIOS | Select-Object -First 1 Manufacturer, SMBIOSBIOSVersion, ReleaseDate | ConvertTo-Json -Compress
         $ram = Get-CimInstance Win32_PhysicalMemory | Select-Object Capacity, Speed, ConfiguredClockSpeed, DeviceLocator, Manufacturer, PartNumber | ConvertTo-Json -Compress
-        $gpu = Get-CimInstance Win32_VideoController | Select-Object -First 1 Name, AdapterRAM, DriverVersion | ConvertTo-Json -Compress
+        $gpu = Get-CimInstance Win32_VideoController | Select-Object Name, AdapterRAM, DriverVersion | ConvertTo-Json -Compress
         $disks = Get-CimInstance Win32_DiskDrive | Select-Object Model, Size, MediaType | ConvertTo-Json -Compress
         "---CPU---`n$cpu`n---BOARD---`n$board`n---BIOS---`n$bios`n---RAM---`n$ram`n---GPU---`n$gpu`n---DISKS---`n$disks"
     "#;
@@ -109,20 +142,21 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
         .args(["-NoProfile", "-NonInteractive", "-Command", wmi_script])
         .output();
 
-    let mut max_clock = 2808;
-    let mut board_mfg = "Dell Inc.".to_string();
-    let mut board_model = "0D02VH".to_string();
-    let mut board_ver = "A01".to_string();
-    let mut bios_vendor = "Dell Inc.".to_string();
-    let mut bios_ver = "2.18.0".to_string();
-    let mut bios_date = "2021-06-17".to_string();
-    let mut gpu_name = "Intel(R) UHD Graphics 630".to_string();
-    let mut gpu_vram_mb = 1024;
+    let mut max_clock = 0;
+    let mut current_clock = sys.cpus().first().map(|cpu| cpu.frequency() as u32).unwrap_or(0);
+    let mut board_mfg = "Unknown".to_string();
+    let mut board_model = "Unknown".to_string();
+    let mut board_ver = "Unknown".to_string();
+    let mut bios_vendor = "Unknown".to_string();
+    let mut bios_ver = "Unknown".to_string();
+    let mut bios_date = "Unknown".to_string();
+    let mut gpu_name = "Unknown".to_string();
+    let mut gpu_vram_mb = 0;
     let mut gpu_driver = "".to_string();
     let mut is_discrete_gpu = false;
     let mut ram_slots: Vec<RamSlotInfo> = Vec::new();
     let mut total_ram_bytes: u64 = 0;
-    let mut ram_speed = 2666;
+    let mut ram_speed = 0;
     let mut disk_list: Vec<DiskInfo> = Vec::new();
 
     if let Ok(out) = output {
@@ -135,6 +169,9 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(json_str) {
                     if let Some(c) = v.get("MaxClockSpeed").and_then(|c| c.as_u64()) {
                         max_clock = c as u32;
+                    }
+                    if let Some(c) = v.get("CurrentClockSpeed").and_then(|c| c.as_u64()) {
+                        current_clock = c as u32;
                     }
                 }
             } else if s.starts_with("BOARD") && i + 1 < sections.len() {
@@ -159,6 +196,9 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
                     if let Some(bv) = v.get("SMBIOSBIOSVersion").and_then(|bv| bv.as_str()) {
                         bios_ver = bv.trim().to_string();
                     }
+                    if let Some(date) = v.get("ReleaseDate").and_then(|date| date.as_str()) {
+                        bios_date = parse_bios_release_date(date);
+                    }
                 }
             } else if s.starts_with("RAM") && i + 1 < sections.len() {
                 let json_str = sections[i + 1].trim();
@@ -169,12 +209,19 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
                         vec![v]
                     };
                     for item in items {
-                        let cap = item.get("Capacity").and_then(|c| c.as_u64()).unwrap_or(8589934592);
+                        let cap = item.get("Capacity").and_then(|c| c.as_u64()).unwrap_or(0);
+                        if cap == 0 {
+                            continue;
+                        }
                         total_ram_bytes += cap;
-                        let spd = item.get("ConfiguredClockSpeed").and_then(|c| c.as_u64()).unwrap_or(2666) as u32;
+                        let spd = item
+                            .get("ConfiguredClockSpeed")
+                            .and_then(|clock| clock.as_u64())
+                            .or_else(|| item.get("Speed").and_then(|clock| clock.as_u64()))
+                            .unwrap_or(0) as u32;
                         ram_speed = spd;
                         let loc = item.get("DeviceLocator").and_then(|l| l.as_str()).unwrap_or("DIMM").to_string();
-                        let mfg = item.get("Manufacturer").and_then(|m| m.as_str()).unwrap_or("OEM").to_string();
+                        let mfg = item.get("Manufacturer").and_then(|m| m.as_str()).unwrap_or("Unknown").to_string();
                         let size_gb = cap / (1024 * 1024 * 1024);
                         ram_slots.push(RamSlotInfo {
                             slot: loc,
@@ -187,19 +234,23 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
                 }
             } else if s.starts_with("GPU") && i + 1 < sections.len() {
                 let json_str = sections[i + 1].trim();
-                if let Ok(v) = serde_json::from_str::<serde_json::Value>(json_str) {
-                    if let Some(n) = v.get("Name").and_then(|n| n.as_str()) {
-                        gpu_name = n.trim().to_string();
-                    }
-                    if let Some(r) = v.get("AdapterRAM").and_then(|r| r.as_u64()) {
-                        gpu_vram_mb = r / (1024 * 1024);
-                    }
-                    if let Some(d) = v.get("DriverVersion").and_then(|d| d.as_str()) {
-                        gpu_driver = d.trim().to_string();
-                    }
-                    let lower = gpu_name.to_lowercase();
-                    if lower.contains("nvidia") || lower.contains("geforce") || lower.contains("rtx") || lower.contains("radeon rx") {
-                        is_discrete_gpu = true;
+                if let Ok(value) = serde_json::from_str::<serde_json::Value>(json_str) {
+                    let adapters = if value.is_array() {
+                        value.as_array().cloned().unwrap_or_default()
+                    } else {
+                        vec![value]
+                    };
+                    if let Some(v) = select_preferred_gpu(&adapters) {
+                        if let Some(n) = v.get("Name").and_then(|n| n.as_str()) {
+                            gpu_name = n.trim().to_string();
+                        }
+                        if let Some(r) = v.get("AdapterRAM").and_then(|r| r.as_u64()) {
+                            gpu_vram_mb = r / (1024 * 1024);
+                        }
+                        if let Some(d) = v.get("DriverVersion").and_then(|d| d.as_str()) {
+                            gpu_driver = d.trim().to_string();
+                        }
+                        is_discrete_gpu = is_discrete_gpu_name(&gpu_name);
                     }
                 }
             } else if s.starts_with("DISKS") && i + 1 < sections.len() {
@@ -211,7 +262,7 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
                         vec![v]
                     };
                     for item in items {
-                        let model = item.get("Model").and_then(|m| m.as_str()).unwrap_or("Disk").trim().to_string();
+                        let model = item.get("Model").and_then(|m| m.as_str()).unwrap_or("Unknown").trim().to_string();
                         let size_bytes = item.get("Size").and_then(|s| s.as_u64()).unwrap_or(0);
                         let media = item.get("MediaType").and_then(|m| m.as_str()).unwrap_or("Fixed").trim().to_string();
                         disk_list.push(DiskInfo {
@@ -231,11 +282,13 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
         ((sys.total_memory()) / (1024 * 1024 * 1024)) as u32
     };
 
-    let is_single = ram_slots.len() <= 1;
-    let channel_mode = if is_single {
-        format!("Single-Channel ({}x {}GB)", ram_slots.len(), total_ram_gb)
+    let is_single = ram_slots.len() == 1;
+    let channel_mode = if ram_slots.is_empty() {
+        "Unknown".to_string()
+    } else if is_single {
+        format!("Single-Channel (inferred from {} populated DIMM)", ram_slots.len())
     } else {
-        format!("Dual-Channel ({}x {}GB)", ram_slots.len(), total_ram_gb / (ram_slots.len() as u32).max(1))
+        format!("Dual-Channel (inferred from {} populated DIMMs)", ram_slots.len())
     };
 
     LiveHostTelemetry {
@@ -247,6 +300,7 @@ fn get_live_hardware_telemetry() -> LiveHostTelemetry {
             cores: cpu_cores,
             threads: cpu_threads,
             max_clock_mhz: max_clock,
+            current_clock_mhz: current_clock,
             current_load_pct: cpu_global_load,
             per_core_loads,
         },
@@ -286,4 +340,42 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![get_live_hardware_telemetry])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{parse_bios_release_date, select_preferred_gpu};
+    use serde_json::json;
+
+    #[test]
+    fn parses_compact_and_iso_bios_release_dates() {
+        assert_eq!(
+            parse_bios_release_date("20260718000000.000000+000"),
+            "2026-07-18"
+        );
+        assert_eq!(parse_bios_release_date("2026-07-18T00:00:00Z"), "2026-07-18");
+        assert_eq!(parse_bios_release_date(""), "Unknown");
+    }
+
+    #[test]
+    fn prefers_a_discrete_adapter_over_integrated_graphics() {
+        let adapters = vec![
+            json!({ "Name": "Intel(R) UHD Graphics 770" }),
+            json!({ "Name": "NVIDIA GeForce RTX 4070 SUPER" }),
+        ];
+
+        let selected = select_preferred_gpu(&adapters).expect("adapter");
+        assert_eq!(selected["Name"], "NVIDIA GeForce RTX 4070 SUPER");
+    }
+
+    #[test]
+    fn recognizes_a_discrete_radeon_rx_adapter() {
+        let adapters = vec![
+            json!({ "Name": "AMD Radeon(TM) Graphics" }),
+            json!({ "Name": "AMD Radeon RX 7900 XTX" }),
+        ];
+
+        let selected = select_preferred_gpu(&adapters).expect("adapter");
+        assert_eq!(selected["Name"], "AMD Radeon RX 7900 XTX");
+    }
 }

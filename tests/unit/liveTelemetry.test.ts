@@ -13,6 +13,7 @@ const nativePayload: NativeHardwareTelemetryPayload = {
     cores: 16,
     threads: 32,
     max_clock_mhz: 5700,
+    current_clock_mhz: 4800,
     current_load_pct: 37,
     per_core_loads: [20, 54, 37, 41],
   },
@@ -95,6 +96,7 @@ describe('mergeNativeTelemetry', () => {
       cores: 16,
       threads: 32,
       maxClockMhz: 5700,
+      avgClockMhz: 4800,
       currentLoadPct: 37,
       perCoreLoads: [20, 54, 37, 41],
     })
