@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AeroSpec • Hardware Telemetry & Graceful State Degradation HUD</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    *, *::before, *::after {
+      transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .font-mono {
+      font-feature-settings: "tnum" 1, "zero" 1;
+    }
+
+    /* Dark Mode Theme */
+    .dark body {
+      background-color: #06090e;
+      background-image: 
+        radial-gradient(ellipse 90% 60% at 50% -10%, rgba(14, 165, 233, 0.15) 0%, transparent 80%),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+      color: #f8fafc;
+    }
+
+    .dark .studio-card {
+      background: rgba(13, 19, 33, 0.88);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .dark .studio-card:hover {
+      border-color: rgba(56, 189, 248, 0.5);
+      box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.8), 0 0 25px -5px rgba(56, 189, 248, 0.2);
+    }
+
+    .dark .pcb-substrate {
+      background: #090e17;
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.04) 0%, transparent 80%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 20px 20px, 20px 20px;
+    }
+
+    /* Light Mode Theme */
+    body {
+      background-color: #f1f5f9;
+      background-image: 
+        radial-gradient(ellipse 90% 60% at 50% -10%, rgba(14, 165, 233, 0.12) 0%, transparent 80%),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+      color: #0f172a;
+    }
+
+    .studio-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(203, 213, 225, 0.9);
+      box-shadow: 
+        0 10px 25px -5px rgba(100, 116, 139, 0.15),
+        0 4px 6px -2px rgba(100, 116, 139, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 1);
+    }
+
+    .studio-card:hover {
+      border-color: rgba(2, 132, 199, 0.6);
+      box-shadow: 
+        0 20px 35px -5px rgba(100, 116, 139, 0.25),
+        0 0 20px -3px rgba(14, 165, 233, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 1);
+    }
+
+    .pcb-substrate {
+      background: #e2e8f0;
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(2, 132, 199, 0.06) 0%, transparent 80%),
+        linear-gradient(rgba(100, 116, 139, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(100, 116, 139, 0.08) 1px, transparent 1px);
+      background-size: 100% 100%, 20px 20px, 20px 20px;
+    }
+
+    /* Multi-Lane Parallel Copper Traces Animation */
+    .trace-bus {
+      stroke-dasharray: 8, 8;
+      animation: electronFlow 5s linear infinite;
+    }
+
+    .trace-bus-fast {
+      stroke-dasharray: 6, 6;
+      animation: electronFlow 2.5s linear infinite;
+    }
+
+    @keyframes electronFlow {
+      to { stroke-dashoffset: -160; }
+    }
+
+    /* Tactile Elevation */
+    .tactile-chip {
+      box-shadow: 
+        0 6px 16px -2px rgba(0, 0, 0, 0.25),
+        0 2px 4px -1px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .dark .tactile-chip {
+      box-shadow: 
+        0 8px 20px -3px rgba(0, 0, 0, 0.6),
+        0 2px 5px -1px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    .dark ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    .dark ::-webkit-scrollbar-thumb { background: rgba(71, 85, 105, 0.6); border-radius: 4px; }
+    ::-webkit-scrollbar-track { background: rgba(226, 232, 240, 0.8); }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.8); border-radius: 4px; }
+  </style>
+</head>
+<body class="p-4 lg:p-6 select-none flex flex-col gap-4 max-w-[1720px] mx-auto min-h-screen">
+
+  <!-- ================= TOP CLEAN STUDIO HEADER ================= -->
+  <header class="studio-card rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+    
+    <!-- Logo & Live Host Info -->
+    <div class="flex items-center gap-4">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-sky-500 via-sky-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/30 shrink-0">
+        <i data-lucide="cpu" class="w-6 h-6 text-white"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2.5">
+          <h1 class="text-xl font-black tracking-tight flex items-center gap-1.5 dark:text-white text-slate-900">
+            AeroSpec <span class="text-sky-500">Pro</span>
+          </h1>
+          <span class="px-2 py-0.5 text-xs font-semibold dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800 bg-sky-100 text-sky-800 border border-sky-300 rounded-full font-mono shadow-sm">
+            v2.6
+          </span>
+          <span id="uiHeaderHint" class="text-xs dark:text-slate-200 text-slate-700 dark:bg-slate-800 bg-white px-3 py-1 rounded-lg border dark:border-slate-700 border-slate-300 flex items-center gap-1.5 font-semibold shadow-sm">
+            <i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5 text-sky-500"></i> Click component for Deep Inspection
+          </span>
+        </div>
+        <p class="text-xs dark:text-slate-300 text-slate-600 font-mono flex items-center gap-2 mt-1">
+          <span>Host: <strong class="dark:text-white text-slate-900">DESKTOP-TITAN-X</strong></span>
+          <span class="text-slate-400">•</span>
+          <span><span id="uiUptimeLabel">Uptime:</span> <strong class="dark:text-slate-200 text-slate-800">04h 32m</strong></span>
+          <span class="text-slate-400">•</span>
+          <span class="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 
+            <span id="uiBusStatus">Hardware Bus Active</span>
+          </span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Center: Hardware Simulation Mode + Persona Selector -->
+    <div class="flex flex-wrap items-center gap-3">
+      
+      <!-- Live Rig Simulator Switcher (Test Full Rig vs Budget/Missing Components) -->
+      <div class="flex items-center gap-2 dark:bg-slate-900 bg-white border dark:border-slate-800 border-slate-300 px-3 py-1.5 rounded-xl shadow-sm">
+        <span class="text-xs font-bold dark:text-slate-300 text-slate-700 flex items-center gap-1">
+          <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-amber-500"></i> <span id="uiHardwareModeLabel">Rig Simulation:</span>
+        </span>
+        <select id="rigSelect" onchange="switchRigProfile(this.value)" class="bg-transparent text-xs font-bold text-amber-600 dark:text-amber-400 focus:outline-none cursor-pointer">
+          <option value="full">🔥 Fully Loaded Rig (RTX 4070 Ti, 32GB Dual, 2x NVMe, AIO, DAC)</option>
+          <option value="missing">⚡ Missing Components (No dGPU, 1x RAM Stick, 1x NVMe, No DAC)</option>
+        </select>
+      </div>
+
+      <!-- User Persona Selector -->
+      <div class="flex items-center gap-2 dark:bg-slate-900 bg-white border dark:border-slate-800 border-slate-300 px-3 py-1.5 rounded-xl shadow-sm">
+        <i data-lucide="target" class="w-3.5 h-3.5 text-sky-500"></i>
+        <select id="personaSelect" onchange="onPersonaChange(this.value)" class="bg-transparent text-xs font-bold dark:text-sky-300 text-sky-700 focus:outline-none cursor-pointer">
+          <option value="dev">Fullstack Dev + Docker + 1440p Gaming</option>
+          <option value="creator">4K Video Creator + Unreal 5 + 3D Blender</option>
+          <option value="esports">Esports Low-Latency 240Hz High FPS</option>
+          <option value="silent">Silent AI Lab (Local LLM Q4/Q8 Inference)</option>
+        </select>
+      </div>
+
+    </div>
+
+    <!-- Right Controls: Language + Theme + Export -->
+    <div class="flex items-center gap-2">
+      <!-- Language Switcher Button (VI / EN) -->
+      <button onclick="toggleLanguage()" id="langToggleBtn" class="px-3 py-1.5 rounded-xl dark:bg-slate-800 dark:hover:bg-slate-750 bg-white hover:bg-slate-100 border dark:border-slate-700 border-slate-300 dark:text-sky-400 text-sky-600 flex items-center gap-1.5 text-xs font-extrabold transition cursor-pointer shadow-sm">
+        <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+        <span id="langLabel">VI</span>
+      </button>
+
+      <!-- Light / Dark Mode Button -->
+      <button onclick="toggleTheme()" id="themeToggleBtn" class="px-3 py-1.5 rounded-xl dark:bg-slate-800 dark:hover:bg-slate-750 bg-white hover:bg-slate-100 border dark:border-slate-700 border-slate-300 dark:text-amber-400 text-slate-800 flex items-center gap-1.5 text-xs font-bold transition cursor-pointer shadow-sm">
+        <i id="themeIcon" data-lucide="sun" class="w-3.5 h-3.5"></i>
+        <span id="themeLabel">Light</span>
+      </button>
+
+      <button class="px-3.5 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs flex items-center gap-1.5 transition duration-150 cursor-pointer shadow-md shadow-sky-500/25">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> <span id="uiExportBtn">Export Card</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= 3-COLUMN CORE TELEMETRY DASHBOARD ================= -->
+  <main class="grid grid-cols-12 gap-4">
+
+    <!-- ================= LEFT COLUMN: CPU + RAM + THERMAL COOLER ================= -->
+    <section class="col-span-12 xl:col-span-3 flex flex-col gap-4">
+      
+      <!-- CPU Detailed Card -->
+      <div onclick="openInspector('cpu')" class="studio-card rounded-2xl p-4 flex flex-col gap-3.5 cursor-pointer group">
+        
+        <div class="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-2.5">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-sky-500/10 flex items-center justify-center text-sky-500 shadow-sm">
+              <i data-lucide="cpu" class="w-4 h-4"></i>
+            </div>
+            <span class="font-bold text-xs dark:text-white text-slate-900 group-hover:text-sky-500 transition">Processor Engine</span>
+          </div>
+          <span class="px-2 py-0.5 text-[11px] font-mono font-semibold dark:bg-sky-950 dark:text-sky-300 bg-sky-100 text-sky-800 rounded flex items-center gap-1">
+            <span>Inspect</span> <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+          </span>
+        </div>
+
+        <div>
+          <h2 id="cpuMainTitle" class="text-base font-extrabold dark:text-white text-slate-900 group-hover:text-sky-500 transition">AMD Ryzen 7 7800X3D</h2>
+          <p id="cpuSubTitle" class="text-xs dark:text-slate-300 text-slate-600 font-mono mt-0.5">8 Cores / 16 Threads • 96MB 3D V-Cache</p>
+        </div>
+
+        <!-- Telemetry 4-Grid -->
+        <div class="grid grid-cols-2 gap-2 font-mono text-xs">
+          <div class="dark:bg-slate-900 bg-slate-50 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 shadow-sm flex flex-col">
+            <span class="text-[11px] dark:text-slate-400 text-slate-500 font-bold">Avg Clock</span>
+            <span class="text-sm font-extrabold dark:text-white text-slate-900 mt-0.5">4,850 <span class="text-[10px] font-normal">MHz</span></span>
+          </div>
+
+          <div class="dark:bg-slate-900 bg-slate-50 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 shadow-sm flex flex-col">
+            <span class="text-[11px] dark:text-slate-400 text-slate-500 font-bold">Core Temp</span>
+            <span class="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">56.2 <span class="text-[10px] font-normal">°C</span></span>
+          </div>
+
+          <div class="dark:bg-slate-900 bg-slate-50 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 shadow-sm flex flex-col">
+            <span class="text-[11px] dark:text-slate-400 text-slate-500 font-bold">VCore (SVI3)</span>
+            <span class="text-sm font-extrabold dark:text-amber-300 text-amber-600 mt-0.5">1.085 <span class="text-[10px] font-normal">V</span></span>
+          </div>
+
+          <div class="dark:bg-slate-900 bg-slate-50 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 shadow-sm flex flex-col">
+            <span class="text-[11px] dark:text-slate-400 text-slate-500 font-bold">Package Power</span>
+            <span class="text-sm font-extrabold dark:text-indigo-300 text-indigo-600 mt-0.5">58.4 <span class="text-[10px] font-normal">W</span></span>
+          </div>
+        </div>
+
+        <!-- 8 Core Live Bars -->
+        <div class="flex flex-col gap-1.5 mt-0.5">
+          <div class="flex justify-between items-center text-[11px] font-mono dark:text-slate-300 text-slate-700">
+            <span class="font-bold" id="uiPerCoreLabel">Per-Core Active Loads</span>
+            <span class="text-sky-500 font-extrabold">Avg 34%</span>
+          </div>
+          <div class="grid grid-cols-8 gap-1 h-9 dark:bg-slate-900 bg-slate-100 p-1 rounded-lg border dark:border-slate-800 border-slate-200 shadow-inner">
+            <div class="dark:bg-slate-800 bg-slate-200 rounded flex flex-col justify-end overflow-hidden"><div class="bg-sky-500 w-full" style="height: 60%"></div></div>
+            <div class="dark:bg-slate-800 bg-slate-200 rounded flex flex-col justify-end overflow-hidden"><div class="bg-sky-500 w-full" style="height: 40%"></div></div>
+            <div class="dark:bg-slate-800 bg-slate-200 rounded flex flex-col justify-end overflow-hidden"><div class="bg-sky-500 w-full" style="height: 85%"></div></div>
+            <div class="dark:bg-slate-800 bg-slate-200 rounded flex flex-col justify-end overflow-hidden"><div class="bg-sky-500 w-full" style="height: 25%"></div></div>
+            <div class="dark:bg-slate-800 bg-slate-200 rounded flex flex-col justify-end overflow-hidden"><div class="bg-sky-500 w-full" style="height: 20%"></div></div>
+            <div class="dark:bg-slate-800 bg-slate-200 rounded flex flex-col justify-end overflow-hidden"><div class="bg-sky-500 w-full" style="height: 90%"></div></div>
+            <div class="dark:bg-slate-800 bg-slate-200 rounded flex flex-col justify-end overflow-hidden"><div class="bg-sky-500 w-full" style="height: 15%"></div></div>
+            <div class="dark:bg-slate-800 bg-slate-200 rounded flex flex-col justify-end overflow-hidden"><div class="bg-sky-500 w-full" style="height: 18%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RAM & Timings Card -->
+      <div onclick="openInspector('ram')" class="studio-card rounded-2xl p-4 flex flex-col gap-3 cursor-pointer group">
+        <div class="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-2.5">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500 shadow-sm">
+              <i data-lucide="layers" class="w-4 h-4"></i>
+            </div>
+            <span class="font-bold text-xs dark:text-white text-slate-900 group-hover:text-indigo-500 transition">Memory Array</span>
+          </div>
+          <span id="ramBadge" class="px-2 py-0.5 text-[11px] font-mono font-semibold dark:bg-indigo-950 dark:text-indigo-300 bg-indigo-100 text-indigo-800 rounded">
+            DUAL-CH • CL30
+          </span>
+        </div>
+
+        <div>
+          <h3 id="ramMainTitle" class="text-sm font-extrabold dark:text-white text-slate-900 group-hover:text-indigo-500 transition">32GB Dual-Channel (2x16GB)</h3>
+          <p id="ramSubTitle" class="text-xs dark:text-slate-300 text-slate-600 font-mono mt-0.5">DDR5-6000 • SK Hynix A-Die</p>
+        </div>
+
+        <!-- Timings Compact Table -->
+        <div class="dark:bg-slate-900 bg-slate-50 rounded-xl p-2.5 border dark:border-slate-800 border-slate-200 shadow-sm flex flex-col gap-1.5 font-mono text-xs">
+          <div class="flex justify-between items-center">
+            <span class="dark:text-slate-400 text-slate-500 text-[11px]">Primary Timings:</span>
+            <span id="ramTimingsVal" class="font-extrabold text-emerald-600 dark:text-emerald-400">CL30-38-38-96</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="dark:text-slate-400 text-slate-500 text-[11px]">Infinity Fabric (FCLK):</span>
+            <span class="font-extrabold text-sky-500">2000 MHz (1:1)</span>
+          </div>
+        </div>
+
+        <!-- Missing Hardware Alert Banner (If Single Channel) -->
+        <div id="ramWarningBanner" class="hidden text-[11px] font-mono bg-amber-500/10 text-amber-600 dark:text-amber-400 p-2 rounded-lg border border-amber-500/30 flex items-center gap-1.5">
+          <i data-lucide="alert-triangle" class="w-3.5 h-3.5 shrink-0"></i>
+          <span>Single-Channel Mode (Slot B2 empty). Bandwidth halved!</span>
+        </div>
+      </div>
+
+      <!-- Thermal Cooler Card -->
+      <div onclick="openInspector('cooler')" class="studio-card rounded-2xl p-3.5 flex flex-col gap-2.5 cursor-pointer group">
+        <div class="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-2">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-md bg-teal-500/10 flex items-center justify-center text-teal-500">
+              <i data-lucide="fan" class="w-3.5 h-3.5"></i>
+            </div>
+            <span class="font-bold text-xs dark:text-white text-slate-900">Thermal Solution</span>
+          </div>
+          <span id="coolerBadge" class="px-2 py-0.2 text-[10px] font-mono font-bold bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 rounded">
+            AIO 360mm
+          </span>
+        </div>
+
+        <div class="flex items-center justify-between font-mono text-xs">
+          <div class="min-w-0">
+            <h4 id="coolerTitle" class="font-bold text-slate-900 dark:text-white text-xs truncate">Arctic Liquid Freezer III 360</h4>
+            <span id="coolerSub" class="text-[11px] text-slate-500 dark:text-slate-400">PWM Pump: 2,800 RPM</span>
+          </div>
+          <div class="text-right shrink-0">
+            <span id="coolerTemp" class="font-extrabold text-teal-600 dark:text-teal-400">32.4 °C</span>
+            <span class="block text-[10px] text-slate-400">Coolant</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= CENTER COLUMN: MOTHERBOARD WITH REALISTIC MULTI-LANE BUS ================= -->
+    <section class="col-span-12 xl:col-span-6 flex flex-col gap-4">
+      
+      <div id="boardContainer" class="studio-card rounded-2xl p-5 flex flex-col gap-4 flex-1 relative overflow-hidden">
+        
+        <!-- Board Header -->
+        <div onclick="openInspector('mainboard')" class="flex flex-wrap items-center justify-between gap-3 border-b dark:border-slate-800 border-slate-200 pb-3 cursor-pointer group z-10">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl dark:bg-slate-900 bg-slate-100 border dark:border-slate-700 border-slate-300 flex items-center justify-center text-sky-500 shadow-sm group-hover:border-sky-500 transition">
+              <i data-lucide="circuit-board" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="text-base font-bold dark:text-white text-slate-900 group-hover:text-sky-500 transition">MSI MAG B650 TOMAHAWK WIFI</h2>
+              <p class="text-xs dark:text-slate-300 text-slate-600 font-mono">AMD B650 Chipset • 6-Layer Server PCB</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 dark:bg-sky-950 dark:text-sky-300 bg-sky-100 text-sky-800 rounded-lg text-xs font-mono font-bold flex items-center gap-1 shadow-sm">
+              <span>Inspect Board</span> <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+            </span>
+          </div>
+        </div>
+
+        <!-- Realistic PCB Substrate Canvas -->
+        <div id="schematicArea" class="pcb-substrate rounded-2xl p-4 border dark:border-slate-800 border-slate-300 flex-1 flex flex-col justify-between min-h-[460px] gap-3.5 relative shadow-inner">
+          
+          <svg id="busSvg" class="absolute inset-0 w-full h-full pointer-events-none z-0">
+            <!-- Dynamic multi-lane realistic copper traces injected by JS -->
+          </svg>
+
+          <!-- TOP ROW: VRM Heatsink & CPU Socket & DIMM Banks -->
+          <div class="grid grid-cols-12 gap-3 z-10">
+            
+            <!-- VRM Module -->
+            <div id="nodeVrm" onclick="openInspector('vrm')" class="col-span-4 dark:bg-slate-900 bg-white hover:border-amber-400 transition p-3 rounded-xl border dark:border-slate-800 border-slate-300 tactile-chip flex flex-col justify-between cursor-pointer group">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-amber-500 flex items-center gap-1">
+                    <i data-lucide="shield" class="w-3 h-3"></i> VRM 14+2
+                  </span>
+                  <span class="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">42.8 °C</span>
+                </div>
+                <div class="text-xs font-bold dark:text-slate-200 text-slate-800 mt-1 font-mono">80A SPS Stages</div>
+              </div>
+
+              <div class="w-full dark:bg-slate-800 bg-slate-200 h-1.5 rounded-full overflow-hidden mt-2">
+                <div class="bg-emerald-500 h-full w-[35%]"></div>
+              </div>
+            </div>
+
+            <!-- Socket AM5 Central Core -->
+            <div id="nodeCpu" onclick="openInspector('cpu')" class="col-span-4 dark:bg-sky-950/60 bg-sky-100/90 hover:border-sky-500 transition p-3.5 rounded-xl border-2 dark:border-sky-500/70 border-sky-400 tactile-chip flex flex-col items-center justify-center text-center relative group cursor-pointer">
+              <div class="absolute -top-2 px-2 py-0.2 dark:bg-sky-900 bg-sky-600 text-white rounded text-[9px] font-mono font-extrabold shadow-md">
+                LGA 1718 SOCKET
+              </div>
+              <i data-lucide="cpu" class="w-8 h-8 text-sky-500 mb-0.5"></i>
+              <span class="text-xs font-extrabold dark:text-white text-slate-900">AMD AM5 Core</span>
+              <span id="socketCpuLabel" class="text-xs text-sky-700 dark:text-sky-300 font-mono font-extrabold truncate w-full">Ryzen 7 7800X3D</span>
+            </div>
+
+            <!-- 4x DDR5 DIMM Slot Bank -->
+            <div id="nodeRam" onclick="openInspector('ram')" class="col-span-4 dark:bg-slate-900 bg-white hover:border-indigo-400 transition p-2.5 rounded-xl border dark:border-slate-800 border-slate-300 tactile-chip flex flex-col justify-between cursor-pointer group">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-500 flex items-center gap-1">
+                  <i data-lucide="layers" class="w-3 h-3"></i> DIMM SLOTS
+                </span>
+                <span id="dimmTopologyTag" class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-extrabold">DUAL CH</span>
+              </div>
+
+              <!-- 4 Visual Sticks (Dynamic based on Rig Profile) -->
+              <div class="grid grid-cols-4 gap-1 my-1.5">
+                <div class="h-12 dark:bg-slate-950 bg-slate-100 rounded border border-dashed dark:border-slate-800 border-slate-300 flex flex-col items-center justify-center text-[9px] font-mono text-slate-400">
+                  <span>A1</span>
+                </div>
+                <div id="stickA2" class="h-12 bg-indigo-600 rounded border border-indigo-400 shadow flex flex-col items-center justify-between p-0.5 text-xs font-mono font-bold text-white">
+                  <span class="text-[8px] text-indigo-200">A2</span>
+                  <span class="text-[10px] font-extrabold">16G</span>
+                </div>
+                <div class="h-12 dark:bg-slate-950 bg-slate-100 rounded border border-dashed dark:border-slate-800 border-slate-300 flex flex-col items-center justify-center text-[9px] font-mono text-slate-400">
+                  <span>B1</span>
+                </div>
+                <div id="stickB2" class="h-12 bg-indigo-600 rounded border border-indigo-400 shadow flex flex-col items-center justify-between p-0.5 text-xs font-mono font-bold text-white">
+                  <span class="text-[8px] text-indigo-200">B2</span>
+                  <span class="text-[10px] font-extrabold">16G</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- MIDDLE ROW: High-Speed M.2 NVMe Storage -->
+          <div class="grid grid-cols-3 gap-3 my-0.5 z-10">
+            
+            <!-- M.2_1 CPU Direct -->
+            <div id="nodeNvme1" onclick="openInspector('nvme1')" class="dark:bg-slate-900 bg-white hover:border-sky-500 transition p-3 rounded-xl border dark:border-sky-500/50 border-sky-300 tactile-chip flex items-center gap-2.5 cursor-pointer group">
+              <div class="w-7 h-7 rounded-lg bg-sky-500/10 flex items-center justify-center text-sky-500 shrink-0">
+                <i data-lucide="hard-drive" class="w-3.5 h-3.5"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-bold dark:text-white text-slate-900 truncate">M.2_1 (CPU)</span>
+                  <span class="text-[9px] font-mono px-1 py-0.2 dark:bg-sky-950 dark:text-sky-300 bg-sky-100 text-sky-800 rounded font-bold">Gen4 x4</span>
+                </div>
+                <p class="text-xs dark:text-slate-200 text-slate-800 font-mono truncate font-bold">Samsung 990 Pro 2TB</p>
+                <div class="flex justify-between text-[10px] dark:text-slate-400 text-slate-600 font-mono">
+                  <span class="text-sky-600 dark:text-sky-400">7,450 MB/s</span>
+                  <span class="text-emerald-600 dark:text-emerald-400">41°C</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- M.2_2 Chipset (Dynamic Populated or Empty) -->
+            <div id="nodeNvme2" onclick="openInspector('nvme2')" class="dark:bg-slate-900 bg-white hover:border-indigo-500 transition p-3 rounded-xl border dark:border-slate-800 border-slate-300 tactile-chip flex items-center gap-2.5 cursor-pointer group">
+              <div id="nvme2IconBox" class="w-7 h-7 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0">
+                <i id="nvme2Icon" data-lucide="hard-drive" class="w-3.5 h-3.5"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-bold dark:text-white text-slate-900 truncate">M.2_2 (PCH)</span>
+                  <span id="nvme2Badge" class="text-[9px] font-mono px-1 py-0.2 dark:bg-indigo-950 dark:text-indigo-300 bg-indigo-100 text-indigo-800 rounded font-bold">Gen4 x4</span>
+                </div>
+                <p id="nvme2Title" class="text-xs dark:text-slate-200 text-slate-800 font-mono truncate font-bold">Crucial P3 Plus 1TB</p>
+                <div id="nvme2Footer" class="flex justify-between text-[10px] dark:text-slate-400 text-slate-600 font-mono">
+                  <span class="text-indigo-600 dark:text-indigo-400">5,000 MB/s</span>
+                  <span class="text-emerald-600 dark:text-emerald-400">38°C</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- M.2_3 Empty Slot -->
+            <div class="dark:bg-slate-900/40 bg-slate-100/70 p-2.5 rounded-xl border border-dashed dark:border-slate-800 border-slate-300 flex flex-col items-center justify-center text-center">
+              <span class="text-[10px] font-mono text-slate-400 font-bold">M.2_3 (PCIe 4.0 x4)</span>
+              <span class="text-[9px] text-slate-500 mt-0.5">[Available for Upgrade]</span>
+            </div>
+          </div>
+
+          <!-- BOTTOM ROW: PCIe x16 GPU Slot (Dynamic Populated or Empty) -->
+          <div id="nodeGpu" onclick="openInspector('gpu')" class="dark:bg-slate-900 bg-white hover:border-indigo-400 transition p-3 rounded-xl border-2 dark:border-indigo-500/40 border-indigo-300 tactile-chip flex flex-wrap items-center justify-between gap-2.5 z-10 cursor-pointer group">
+            <div class="flex items-center gap-3">
+              <div id="gpuIconBox" class="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-500 shadow-sm shrink-0">
+                <i id="gpuIcon" data-lucide="monitor" class="w-4 h-4"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-[11px] font-bold text-sky-500 uppercase tracking-wider">PCIe Slot #1</span>
+                  <span id="gpuLinkBadge" class="text-[10px] font-mono px-1.5 py-0.2 dark:bg-emerald-950 dark:text-emerald-300 bg-emerald-100 text-emerald-800 rounded font-extrabold">
+                    PCIe 4.0 x16 @ 16.0 GT/s
+                  </span>
+                </div>
+                <h3 id="gpuMainTitle" class="text-xs font-extrabold dark:text-white text-slate-900 group-hover:text-indigo-500 transition truncate">NVIDIA GeForce RTX 4070 Ti SUPER</h3>
+                <p id="gpuSubTitle" class="text-[11px] dark:text-slate-300 text-slate-600 font-mono truncate">16GB GDDR6X • ReBAR Active • 54°C</p>
+              </div>
+            </div>
+
+            <span id="gpuInspectBtn" class="px-2.5 py-1 dark:bg-indigo-950 dark:text-indigo-300 bg-indigo-100 text-indigo-800 rounded-lg text-xs font-mono font-bold flex items-center gap-1 shrink-0">
+              <span>Inspect GPU</span> <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+            </span>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ================= RIGHT COLUMN: PSU + NETWORK + PERIPHERALS ================= -->
+    <section class="col-span-12 xl:col-span-3 flex flex-col gap-4">
+      
+      <!-- Power Supply Unit (PSU) Card -->
+      <div onclick="openInspector('psu')" class="studio-card rounded-2xl p-3.5 flex flex-col gap-2 cursor-pointer group">
+        <div class="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-2">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-md bg-amber-500/10 flex items-center justify-center text-amber-500">
+              <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+            </div>
+            <span class="font-bold text-xs dark:text-white text-slate-900">Power Delivery</span>
+          </div>
+          <span class="px-2 py-0.2 text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded">
+            80+ Gold • 850W
+          </span>
+        </div>
+
+        <div class="flex items-center justify-between font-mono text-xs">
+          <div class="min-w-0">
+            <h4 class="font-bold text-slate-900 dark:text-white text-xs truncate">Corsair RM850x (ATX 3.0)</h4>
+            <span id="psuLoadText" class="text-[11px] text-slate-500 dark:text-slate-400">Load: 312W (36.7%)</span>
+          </div>
+          <div class="text-right shrink-0">
+            <span class="font-extrabold text-amber-600 dark:text-amber-400">+12V: 12.08V</span>
+            <span class="block text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Zero-RPM</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Network Interface Card -->
+      <div onclick="openInspector('network')" class="studio-card rounded-2xl p-3.5 flex flex-col gap-2 cursor-pointer group">
+        <div class="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-2">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-md bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+              <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+            </div>
+            <span class="font-bold text-xs dark:text-white text-slate-900">Network Interface</span>
+          </div>
+          <span class="px-2 py-0.2 text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 rounded">
+            Wi-Fi 6E
+          </span>
+        </div>
+
+        <div class="flex items-center justify-between font-mono text-xs">
+          <div class="min-w-0">
+            <h4 class="font-bold text-slate-900 dark:text-white text-xs truncate">AMD RZ616 (6GHz Band)</h4>
+            <span class="text-[11px] text-slate-500 dark:text-slate-400">2,402 Mbps • 160MHz</span>
+          </div>
+          <div class="text-right shrink-0">
+            <span class="font-extrabold text-emerald-600 dark:text-emerald-400">4 ms</span>
+            <span class="block text-[10px] text-slate-400">Ping</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connected Peripherals Group -->
+      <div class="studio-card rounded-2xl p-4 flex flex-col gap-3 flex-1">
+        <div class="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-2.5">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-md bg-sky-500/10 flex items-center justify-center text-sky-500">
+              <i data-lucide="plug-2" class="w-3.5 h-3.5"></i>
+            </div>
+            <span class="font-bold text-xs dark:text-white text-slate-900" id="uiPeripheralsTitle">Connected Peripherals</span>
+          </div>
+          <span id="periphCountTag" class="px-2 py-0.2 text-[10px] font-mono font-bold dark:bg-sky-950 dark:text-sky-300 bg-sky-100 text-sky-800 rounded">
+            4 Devices
+          </span>
+        </div>
+
+        <!-- Peripherals List -->
+        <div class="flex flex-col gap-2 overflow-y-auto max-h-[260px] pr-1">
+          
+          <!-- Display -->
+          <div onclick="openInspector('monitor')" class="dark:bg-slate-900 bg-white hover:border-sky-400 transition p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 tactile-chip flex items-center gap-2.5 cursor-pointer group">
+            <div class="w-6 h-6 rounded-md bg-sky-500/10 flex items-center justify-center text-sky-500 shrink-0">
+              <i data-lucide="tv" class="w-3.5 h-3.5"></i>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold dark:text-white text-slate-900 group-hover:text-sky-500 truncate">LG 27GP850-B UltraGear</h4>
+                <span class="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-extrabold">165Hz</span>
+              </div>
+              <p class="text-[10px] font-mono dark:text-slate-300 text-slate-600">2560x1440 • 10-bit HDR</p>
+            </div>
+          </div>
+
+          <!-- Mouse -->
+          <div onclick="openInspector('mouse')" class="dark:bg-slate-900 bg-white hover:border-emerald-400 transition p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 tactile-chip flex items-center gap-2.5 cursor-pointer group">
+            <div class="w-6 h-6 rounded-md bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
+              <i data-lucide="mouse" class="w-3.5 h-3.5"></i>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold dark:text-white text-slate-900 group-hover:text-emerald-500 truncate">Logitech Superlight 2</h4>
+                <span class="text-xs font-mono text-sky-500 font-extrabold">4000Hz</span>
+              </div>
+              <p class="text-[10px] font-mono dark:text-slate-300 text-slate-600">HERO 2 • 0.25ms • 88%</p>
+            </div>
+          </div>
+
+          <!-- Keyboard -->
+          <div onclick="openInspector('keyboard')" class="dark:bg-slate-900 bg-white hover:border-indigo-400 transition p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 tactile-chip flex items-center gap-2.5 cursor-pointer group">
+            <div class="w-6 h-6 rounded-md bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0">
+              <i data-lucide="keyboard" class="w-3.5 h-3.5"></i>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold dark:text-white text-slate-900 group-hover:text-indigo-500 truncate">Wooting 60HE+</h4>
+                <span class="text-xs font-mono text-indigo-600 dark:text-indigo-300 font-extrabold">0.1mm RT</span>
+              </div>
+              <p class="text-[10px] font-mono dark:text-slate-300 text-slate-600">Hall Effect • 8000Hz</p>
+            </div>
+          </div>
+
+          <!-- Audio DAC (Can be Missing) -->
+          <div id="dacCard" onclick="openInspector('dac')" class="dark:bg-slate-900 bg-white hover:border-amber-400 transition p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 tactile-chip flex items-center gap-2.5 cursor-pointer group">
+            <div id="dacIconBox" class="w-6 h-6 rounded-md bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0">
+              <i id="dacIcon" data-lucide="headphones" class="w-3.5 h-3.5"></i>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between">
+                <h4 id="dacTitle" class="text-xs font-bold dark:text-white text-slate-900 group-hover:text-amber-500 truncate">FiiO K5 Pro ESS DAC</h4>
+                <span id="dacRate" class="text-xs font-mono text-amber-600 dark:text-amber-300 font-extrabold">384kHz</span>
+              </div>
+              <p id="dacSub" class="text-[10px] font-mono dark:text-slate-300 text-slate-600">USB Audio • ES9038Q2M</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= BOTTOM FULL-WIDTH: GEMINI 3.7 FLASH HARDWARE COPILOT ================= -->
+  <footer class="studio-card rounded-2xl p-4 flex flex-col gap-3.5">
+    
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b dark:border-slate-800 border-slate-200 pb-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 via-sky-500 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/25 shrink-0">
+          <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="text-sm font-extrabold dark:text-white text-slate-900" id="uiCopilotTitle">
+              Neural Hardware Copilot
+            </h3>
+            <span class="px-2 py-0.2 text-[11px] font-mono font-extrabold dark:bg-sky-950 dark:text-sky-300 bg-sky-100 text-sky-800 border border-sky-300 rounded-full flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
+              gemini-3.7-flash (Hybrid Reasoning)
+            </span>
+          </div>
+          <p class="text-xs dark:text-slate-300 text-slate-600 font-medium" id="uiCopilotDesc">
+            In-depth analysis based on real hardware telemetry and user workload profiles
+          </p>
+        </div>
+      </div>
+
+      <!-- Synergy Score & Run Trigger -->
+      <div class="flex items-center gap-4">
+        <div class="flex items-baseline gap-2 dark:bg-slate-900 bg-white px-3.5 py-1.5 rounded-xl border dark:border-slate-800 border-slate-300 shadow-sm">
+          <span class="text-xs dark:text-slate-300 text-slate-600 font-bold" id="uiSynergyLabel">Build Synergy:</span>
+          <span id="globalSynergyScore" class="text-lg font-black font-mono text-emerald-600 dark:text-emerald-400">97 <span class="text-xs font-normal text-slate-400">/ 100</span></span>
+        </div>
+
+        <button onclick="triggerAiDiagnosis()" class="px-3.5 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-sky-500/25 transition duration-150 cursor-pointer">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span id="uiDiagnosisBtn">Run AI Diagnosis</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- AI 3-Pillar Insights Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs">
+      
+      <!-- Card 1 -->
+      <div class="dark:bg-slate-900 bg-white rounded-xl p-3.5 border dark:border-slate-800 border-slate-300 shadow-sm flex flex-col gap-1.5">
+        <div class="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> <span id="uiPillar1Header">SYNERGY & SWEET SPOT</span>
+          </span>
+          <span id="aiTag1" class="font-mono text-[10px] dark:bg-emerald-950 dark:text-emerald-300 bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.2 rounded font-extrabold">PASSED</span>
+        </div>
+        <p id="aiText1" class="dark:text-slate-200 text-slate-700 leading-relaxed font-sans font-medium">
+          <!-- Populated by JS -->
+        </p>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="dark:bg-slate-900 bg-white rounded-xl p-3.5 border dark:border-slate-800 border-slate-300 shadow-sm flex flex-col gap-1.5">
+        <div class="flex items-center justify-between text-sky-600 dark:text-sky-400 font-bold text-[11px]">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> <span id="uiPillar2Header">THERMAL & VRM HEADROOM</span>
+          </span>
+          <span id="aiTag2" class="font-mono text-[10px] dark:bg-sky-950 dark:text-sky-300 bg-sky-100 text-sky-800 border border-sky-300 px-1.5 py-0.2 rounded font-extrabold">EXCELLENT</span>
+        </div>
+        <p id="aiText2" class="dark:text-slate-200 text-slate-700 leading-relaxed font-sans font-medium">
+          <!-- Populated by JS -->
+        </p>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="dark:bg-slate-900 bg-white rounded-xl p-3.5 border dark:border-slate-800 border-slate-300 shadow-sm flex flex-col gap-1.5">
+        <div class="flex items-center justify-between text-amber-600 dark:text-amber-400 font-bold text-[11px]">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="lightbulb" class="w-3.5 h-3.5"></i> <span id="uiPillar3Header">PERSONA RECOMMENDATION</span>
+          </span>
+          <span id="aiTag3" class="font-mono text-[10px] dark:bg-amber-950 dark:text-amber-300 bg-amber-100 text-amber-800 border border-amber-300 px-1.5 py-0.2 rounded font-extrabold">OPTIMAL</span>
+        </div>
+        <p id="aiText3" class="dark:text-slate-200 text-slate-700 leading-relaxed font-sans font-medium">
+          <!-- Populated by JS -->
+        </p>
+      </div>
+
+    </div>
+
+  </footer>
+
+  <!-- ================= SLIDE-OVER DEEP COMPONENT INSPECTOR DRAWER ================= -->
+  <div id="inspectorDrawer" class="fixed inset-0 z-50 pointer-events-none opacity-0 transition-opacity duration-250">
+    <div onclick="closeInspector()" class="absolute inset-0 dark:bg-slate-950/80 bg-slate-900/60 backdrop-blur-md cursor-pointer"></div>
+
+    <aside class="absolute top-0 right-0 bottom-0 w-full max-w-2xl dark:bg-slate-900 bg-white border-l dark:border-slate-800 border-slate-300 shadow-2xl p-6 overflow-y-auto flex flex-col gap-5 transform translate-x-full transition-transform duration-300 drawer-panel dark:text-slate-100 text-slate-900">
+      
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-4">
+        <div class="flex items-center gap-3">
+          <div id="inspIconBox" class="w-12 h-12 rounded-2xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-500 shadow-md">
+            <i id="inspIcon" data-lucide="cpu" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <span id="inspBadge" class="text-xs font-mono font-extrabold px-2.5 py-0.5 dark:bg-sky-950 dark:text-sky-300 bg-sky-100 text-sky-800 border border-sky-300 rounded shadow-sm">
+              SILICON DEEP INSPECTION
+            </span>
+            <h2 id="inspTitle" class="text-lg font-black dark:text-white text-slate-900 mt-1">AMD Ryzen 7 7800X3D</h2>
+          </div>
+        </div>
+        <button onclick="closeInspector()" class="w-9 h-9 rounded-xl dark:bg-slate-800 dark:hover:bg-slate-750 bg-slate-100 hover:bg-slate-200 text-slate-600 dark:text-slate-300 flex items-center justify-center border dark:border-slate-700 border-slate-300 transition cursor-pointer shadow-sm">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- DEDICATED COMPONENT AI EVALUATION CARD -->
+      <div class="dark:bg-gradient-to-br dark:from-indigo-950/40 dark:via-slate-850 dark:to-slate-900 bg-indigo-50 p-4 rounded-2xl border dark:border-indigo-500/40 border-indigo-200 shadow-md flex flex-col gap-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i data-lucide="sparkles" class="w-4 h-4 text-indigo-500"></i>
+            <h3 class="font-extrabold text-xs dark:text-white text-slate-900">
+              Gemini 3.7 Flash • Dedicated Component Verdict
+            </h3>
+          </div>
+          <span id="inspAiScore" class="text-xs font-mono font-extrabold px-2 py-0.5 dark:bg-indigo-950 dark:text-indigo-300 bg-indigo-100 text-indigo-800 border border-indigo-300 rounded shadow-sm">
+            SILICON SCORE: 98/100
+          </span>
+        </div>
+        <p id="inspAiText" class="text-xs dark:text-slate-200 text-slate-700 leading-relaxed font-sans font-medium">
+          <!-- Populated by JS -->
+        </p>
+      </div>
+
+      <!-- MICRO-SPECS TABBED CONTAINER -->
+      <div class="flex flex-col gap-3 flex-1">
+        <div class="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-2">
+          <span class="text-xs font-extrabold uppercase tracking-wider text-sky-500 flex items-center gap-1.5">
+            <i data-lucide="binary" class="w-4 h-4"></i> <span id="uiLowLevelTitle">Low-Level Hardware Registers & Micro-Specs</span>
+          </span>
+          <span class="text-xs font-mono dark:text-slate-400 text-slate-600 font-bold">Direct HW Sensors</span>
+        </div>
+
+        <div id="inspDetailsGrid" class="grid grid-cols-2 gap-2.5 font-mono text-xs">
+          <!-- Dynamic details populated by JS -->
+        </div>
+
+        <div class="dark:bg-slate-950 bg-slate-50 rounded-xl p-3.5 border dark:border-slate-800 border-slate-200 mt-1 flex flex-col gap-2 shadow-sm">
+          <h4 class="text-xs font-bold dark:text-white text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="cpu" class="w-4 h-4 text-sky-500"></i> <span id="uiArchTitle">Silicon & Microarchitecture Breakdown</span>
+          </h4>
+          <div id="inspArchText" class="text-xs dark:text-slate-300 text-slate-700 leading-relaxed font-mono">
+            <!-- Dynamic architecture details -->
+          </div>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    let currentLang = 'EN';
+    let currentRig = 'full'; // 'full' or 'missing'
+
+    // ================= DYNAMIC RIG PROFILE SIMULATOR (FULL RIG vs MISSING HARDWARE) =================
+    function switchRigProfile(rigKey) {
+      currentRig = rigKey;
+      
+      const stickB2 = document.getElementById('stickB2');
+      const ramBadge = document.getElementById('ramBadge');
+      const ramMainTitle = document.getElementById('ramMainTitle');
+      const ramSubTitle = document.getElementById('ramSubTitle');
+      const ramTimingsVal = document.getElementById('ramTimingsVal');
+      const ramWarningBanner = document.getElementById('ramWarningBanner');
+      const dimmTopologyTag = document.getElementById('dimmTopologyTag');
+
+      const nvme2IconBox = document.getElementById('nvme2IconBox');
+      const nvme2Icon = document.getElementById('nvme2Icon');
+      const nvme2Badge = document.getElementById('nvme2Badge');
+      const nvme2Title = document.getElementById('nvme2Title');
+      const nvme2Footer = document.getElementById('nvme2Footer');
+
+      const nodeGpu = document.getElementById('nodeGpu');
+      const gpuIconBox = document.getElementById('gpuIconBox');
+      const gpuIcon = document.getElementById('gpuIcon');
+      const gpuLinkBadge = document.getElementById('gpuLinkBadge');
+      const gpuMainTitle = document.getElementById('gpuMainTitle');
+      const gpuSubTitle = document.getElementById('gpuSubTitle');
+      const gpuInspectBtn = document.getElementById('gpuInspectBtn');
+
+      const dacCard = document.getElementById('dacCard');
+      const dacTitle = document.getElementById('dacTitle');
+      const dacRate = document.getElementById('dacRate');
+      const dacSub = document.getElementById('dacSub');
+      const periphCountTag = document.getElementById('periphCountTag');
+      const psuLoadText = document.getElementById('psuLoadText');
+
+      if (rigKey === 'missing') {
+        // 1. Missing RAM Stick (Single-Channel)
+        stickB2.className = "h-12 dark:bg-slate-950 bg-slate-100 rounded border border-dashed dark:border-slate-800 border-slate-300 flex flex-col items-center justify-center text-[9px] font-mono text-slate-400";
+        stickB2.innerHTML = "<span>B2 [EMPTY]</span>";
+        ramBadge.className = "px-2 py-0.5 text-[11px] font-mono font-semibold bg-amber-500/20 text-amber-500 rounded border border-amber-500/30";
+        ramBadge.innerText = "SINGLE-CH (A2)";
+        ramMainTitle.innerText = "16GB Single-Channel (1x16GB)";
+        ramSubTitle.innerText = "DDR5-6000 • 32-bit Sub-channel";
+        ramTimingsVal.innerText = "CL30-38-38-96 (Single)";
+        ramWarningBanner.classList.remove('hidden');
+        dimmTopologyTag.innerText = "SINGLE CH (A2)";
+        dimmTopologyTag.className = "text-[10px] font-mono text-amber-500 font-extrabold";
+
+        // 2. Missing NVMe_2 Slot
+        nvme2IconBox.className = "w-7 h-7 rounded-lg bg-slate-500/10 flex items-center justify-center text-slate-400 shrink-0";
+        nvme2Badge.className = "text-[9px] font-mono px-1 py-0.2 bg-slate-200 dark:bg-slate-800 text-slate-500 rounded font-bold";
+        nvme2Badge.innerText = "EMPTY";
+        nvme2Title.innerText = "M.2_2 Slot [Unpopulated]";
+        nvme2Footer.innerHTML = `<span class="text-slate-400">PCIe 4.0 x4 Available</span><span class="text-slate-400">-- °C</span>`;
+
+        // 3. Missing Discrete GPU (Running on AMD Radeon iGPU)
+        gpuIconBox.className = "w-8 h-8 rounded-lg bg-slate-500/20 flex items-center justify-center text-slate-400 shadow-sm shrink-0";
+        gpuIcon.setAttribute('data-lucide', 'cpu');
+        gpuLinkBadge.className = "text-[10px] font-mono px-1.5 py-0.2 bg-amber-500/20 text-amber-500 rounded font-extrabold border border-amber-500/30";
+        gpuLinkBadge.innerText = "PCIe x16 [EMPTY] • iGPU ACTIVE";
+        gpuMainTitle.innerText = "AMD Radeon Graphics (Integrated iGPU)";
+        gpuSubTitle.innerText = "2 CUs RDNA2 • 2200 MHz • Shared RAM";
+        gpuInspectBtn.innerHTML = `<span>Inspect iGPU</span> <i data-lucide="arrow-up-right" class="w-3 h-3"></i>`;
+
+        // 4. Missing External DAC (Onboard Realtek ALC4080 Active)
+        dacTitle.innerText = "Realtek ALC4080 Onboard Audio";
+        dacRate.innerText = "192kHz";
+        dacRate.className = "text-xs font-mono text-slate-400 font-extrabold";
+        dacSub.innerText = "Integrated High-Definition Audio Codec";
+        periphCountTag.innerText = "3 Devices";
+        psuLoadText.innerText = "Load: 118W (13.8%)";
+
+      } else {
+        // Restore Full Rig
+        stickB2.className = "h-12 bg-indigo-600 rounded border border-indigo-400 shadow flex flex-col items-center justify-between p-0.5 text-xs font-mono font-bold text-white";
+        stickB2.innerHTML = `<span class="text-[8px] text-indigo-200">B2</span><span class="text-[10px] font-extrabold">16G</span>`;
+        ramBadge.className = "px-2 py-0.5 text-[11px] font-mono font-semibold dark:bg-indigo-950 dark:text-indigo-300 bg-indigo-100 text-indigo-800 rounded";
+        ramBadge.innerText = "DUAL-CH • CL30";
+        ramMainTitle.innerText = "32GB Dual-Channel (2x16GB)";
+        ramSubTitle.innerText = "DDR5-6000 • SK Hynix A-Die";
+        ramTimingsVal.innerText = "CL30-38-38-96";
+        ramWarningBanner.classList.add('hidden');
+        dimmTopologyTag.innerText = "DUAL CH";
+        dimmTopologyTag.className = "text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-extrabold";
+
+        nvme2IconBox.className = "w-7 h-7 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0";
+        nvme2Badge.className = "text-[9px] font-mono px-1 py-0.2 dark:bg-indigo-950 dark:text-indigo-300 bg-indigo-100 text-indigo-800 rounded font-bold";
+        nvme2Badge.innerText = "Gen4 x4";
+        nvme2Title.innerText = "Crucial P3 Plus 1TB";
+        nvme2Footer.innerHTML = `<span class="text-indigo-600 dark:text-indigo-400">5,000 MB/s</span><span class="text-emerald-600 dark:text-emerald-400">38°C</span>`;
+
+        gpuIconBox.className = "w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-500 shadow-sm shrink-0";
+        gpuIcon.setAttribute('data-lucide', 'monitor');
+        gpuLinkBadge.className = "text-[10px] font-mono px-1.5 py-0.2 dark:bg-emerald-950 dark:text-emerald-300 bg-emerald-100 text-emerald-800 rounded font-extrabold";
+        gpuLinkBadge.innerText = "PCIe 4.0 x16 @ 16.0 GT/s";
+        gpuMainTitle.innerText = "NVIDIA GeForce RTX 4070 Ti SUPER";
+        gpuSubTitle.innerText = "16GB GDDR6X • ReBAR Active • 54°C";
+        gpuInspectBtn.innerHTML = `<span>Inspect GPU</span> <i data-lucide="arrow-up-right" class="w-3 h-3"></i>`;
+
+        dacTitle.innerText = "FiiO K5 Pro ESS DAC/Amp";
+        dacRate.innerText = "384kHz";
+        dacRate.className = "text-xs font-mono text-amber-600 dark:text-amber-300 font-extrabold";
+        dacSub.innerText = "USB Audio • ES9038Q2M";
+        periphCountTag.innerText = "4 Devices";
+        psuLoadText.innerText = "Load: 312W (36.7%)";
+      }
+
+      lucide.createIcons();
+      drawRealisticPcbBuses();
+      applyLanguage();
+    }
+
+    // ================= I18N DICTIONARY ENGINE (VI / EN) =================
+    const i18nData = {
+      EN: {
+        headerHint: "Click component for Deep Inspection",
+        uptime: "Uptime:",
+        busStatus: "Hardware Bus Active",
+        targetPersona: "Target Persona:",
+        exportBtn: "Export Card",
+        perCore: "Per-Core Active Loads",
+        peripheralsTitle: "Connected Peripherals",
+        copilotTitle: "Neural Hardware Copilot",
+        copilotDesc: "In-depth analysis based on real hardware telemetry and user workload profiles",
+        synergyLabel: "Build Synergy:",
+        diagnosisBtn: "Run AI Diagnosis",
+        pillar1: "SYNERGY & SWEET SPOT",
+        pillar2: "THERMAL & VRM HEADROOM",
+        pillar3: "PERSONA RECOMMENDATION",
+        lowLevelTitle: "Low-Level Hardware Registers & Micro-Specs",
+        archTitle: "Silicon & Microarchitecture Breakdown",
+        personas: {
+          full: {
+            dev: {
+              score: "97",
+              tag1: "PASSED",
+              tag2: "EXCELLENT",
+              tag3: "OPTIMAL",
+              text1: "DDR5-6000 CL30 memory is operating at a 1:1 synchronous ratio with FCLK 2000MHz, hitting the optimal Zen 4 memory sweet spot with zero bus penalty.",
+              text2: "The 14+2 phase 80A VRM holds MOSFET thermals at a cool 42.8°C under 58W CPU draw, providing massive headroom for future flagship upgrades.",
+              text3: "For Fullstack Dev + Docker workloads, 32GB RAM handles 12+ active containers easily. Empty A1/B1 DIMM slots allow seamless upgrade to 64GB."
+            },
+            creator: {
+              score: "93",
+              tag1: "OPTIMAL",
+              tag2: "GREAT",
+              tag3: "CONSIDER 64GB",
+              text1: "Dual NVMe Gen4 x4 array provides 12.4 GB/s aggregate throughput, streaming 4K ProRes 422 footage with zero buffer drops in Premiere and DaVinci.",
+              text2: "RTX 4070 Ti Super 16GB with Dual AV1 Encoders cuts render export times by 58% compared to single-encoder setups.",
+              text3: "Heavy Unreal Engine 5 or After Effects caching may push 32GB RAM close to 85% capacity. Upgrading to 64GB is recommended for large cinematic scenes."
+            },
+            esports: {
+              score: "99",
+              tag1: "ENDGAME",
+              tag2: "ZERO THROTTLE",
+              tag3: "ULTRA LOW LATENCY",
+              text1: "Ryzen 7 7800X3D with 96MB 3D V-Cache delivers the world's highest esports 1% low frame rates, eliminating micro-stutters during heavy combat.",
+              text2: "Logitech G Pro X Superlight 2 (4000Hz / 0.25ms) paired with Wooting 60HE (0.1mm Rapid Trigger) establishes the lowest input-latency chain on direct USB.",
+              text3: "LG Nano-IPS 165Hz OC 180Hz with G-Sync Full Range provides flawless frame pacing at 300+ FPS with zero tearing."
+            },
+            silent: {
+              score: "96",
+              tag1: "SUB-30dB",
+              tag2: "STABLE THERMAL",
+              tag3: "EFFICIENT Q4/Q8",
+              text1: "CPU VCore at 1.085V (Curve Optimizer -20) caps full-load package power at just 58W, keeping Arctic AIO fans under 800 RPM for near-silent operation.",
+              text2: "16GB VRAM on RTX 4070 Ti Super fits Qwen-2.5 14B Q4_K_M or Llama-3.3 8B FP16 entirely in memory with >85 tokens/sec generation speed.",
+              text3: "Room ambient and VRM temps stay below 45°C without supplementary fans, maintaining zero audible noise floor."
+            }
+          },
+          missing: {
+            dev: {
+              score: "74",
+              tag1: "MEMORY BOTTLENECK",
+              tag2: "iGPU FALLBACK",
+              tag3: "UPGRADE RECOMMENDED",
+              text1: "Single-Channel 16GB RAM detected in Slot A2 (32-bit bus). Memory bandwidth is halved (31.2 GB/s), causing an ~18% CPU IPC penalty in compile workloads.",
+              text2: "Discrete GPU is absent. Integrated AMD Radeon Graphics (2 CUs RDNA2) is active for display output, drawing from system RAM.",
+              text3: "For Docker clusters, 16GB RAM will easily hit 90%+ saturation. Strongly recommend inserting a 2nd 16GB stick into Slot B2 to restore Dual-Channel 128-bit bus."
+            },
+            creator: {
+              score: "58",
+              tag1: "NO ACCELERATION",
+              tag2: "VRAM BOTTLENECK",
+              tag3: "REQUIRES dGPU",
+              text1: "No discrete GPU detected. Premiere and DaVinci Resolve cannot utilize CUDA/NVENC acceleration, shifting all video encoding to CPU software rasterization.",
+              text2: "Single NVMe SSD limits concurrent scratch disk bandwidth during 4K timelines. Slot M.2_2 is available for a dedicated cache drive.",
+              text3: "System is severely under-equipped for heavy video production. Recommend adding an RTX 40-series GPU and populating Slot B2 with 16GB RAM."
+            },
+            esports: {
+              score: "65",
+              tag1: "iGPU LIMITATION",
+              tag2: "SINGLE-CH LATENCY",
+              tag3: "720p LOW ONLY",
+              text1: "Integrated Radeon RDNA2 graphics cannot drive 1440p 165Hz at competitive frame rates. Expected frame rates: 45-60 FPS on 720p Low settings.",
+              text2: "Single-channel RAM increases memory frame latency to 84ns, introducing noticeable 1% low frame time stuttering in esports titles.",
+              text3: "Install a dedicated PCIe GPU in Slot 1 and enable Dual-Channel RAM to unlock 7800X3D's true 300+ FPS potential."
+            },
+            silent: {
+              score: "88",
+              tag1: "ULTRA LOW POWER",
+              tag2: "SILENT OPERATION",
+              tag3: "CPU INFERENCE ONLY",
+              text1: "Without a discrete GPU, system total power consumption drops to just 118W under load. Total system is completely silent.",
+              text2: "Local LLM inference is limited to small CPU quantized models (e.g. Llama-3.2 3B Q4) running at ~14 tokens/sec on CPU AVX-512 instructions.",
+              text3: "Great low-power silent home server profile, but adding RAM and discrete GPU is required for heavy AI reasoning."
+            }
+          }
+        }
+      },
+      VI: {
+        headerHint: "Click vào linh kiện để xem vi thông số",
+        uptime: "Thời gian chạy:",
+        busStatus: "Đường truyền bus đang kích hoạt",
+        targetPersona: "Nhu cầu sử dụng:",
+        exportBtn: "Xuất Thẻ Flex",
+        perCore: "Mức tải từng nhân CPU",
+        peripheralsTitle: "Thiết Bị Ngoại Vi Đang Cắm",
+        copilotTitle: "Trợ Lý AI Phân Tích Phần Cứng",
+        copilotDesc: "Đánh giá chuyên sâu dựa trên cấu hình phần cứng thật và hồ sơ người dùng",
+        synergyLabel: "Điểm Cân Bằng:",
+        diagnosisBtn: "Chạy Chẩn Đoán AI",
+        pillar1: "ĐỘ TƯƠNG THÍCH & SWEET SPOT",
+        pillar2: "NHIỆT ĐỘ & ĐỘ AN TOÀN VRM",
+        pillar3: "GỢI Ý TỐI ƯU THEO NHU CẦU",
+        lowLevelTitle: "Thanh Ghi Phần Cứng & Vi Thông Số",
+        archTitle: "Bóc Tách Vi Kiến Trúc & Bán Dẫn",
+        personas: {
+          full: {
+            dev: {
+              score: "97",
+              tag1: "ĐẠT CHUẨN",
+              tag2: "XUẤT SẮC",
+              tag3: "TỐI ƯU",
+              text1: "RAM DDR5-6000 CL30 đang chạy đúng tỉ lệ đồng bộ 1:1 với FCLK 2000MHz cho Zen 4, triệt tiêu hoàn toàn độ trễ bus bộ nhớ.",
+              text2: "Dàn phase 14+2 (80A SPS) của B650 Tomahawk giữ nhiệt độ MOSFET ở mức 42.8°C khi kéo CPU ăn 58W, an toàn nâng cấp CPU cao hơn sau này.",
+              text3: "Với nhu cầu Fullstack Dev + Docker, 32GB RAM cân mượt 12+ containers đồng thời. Khe A1/B1 còn trống sẵn sàng nâng lên 64GB khi cần."
+            },
+            creator: {
+              score: "93",
+              tag1: "TỐI ƯU",
+              tag2: "RẤT TỐT",
+              tag3: "CÂN NHẮC 64GB",
+              text1: "Hệ thống 2 ổ NVMe Gen4 x4 cho tổng băng thông đọc 12.4 GB/s, preview video 4K ProRes 422 mượt mà không bị nghẽn bộ nhớ đệm.",
+              text2: "RTX 4070 Ti Super 16GB với Dual AV1 Encoders thế hệ 8 giúp xuất video Premiere/DaVinci nhanh gấp 2.4x so với encoder đơn.",
+              text3: "Khi làm dự án Unreal Engine 5 đại cảnh hoặc After Effects nặng, 32GB RAM có thể chạm ngưỡng 85% tải. Khuyến nghị lên 64GB nếu làm phim chuyên nghiệp."
+            },
+            esports: {
+              score: "99",
+              tag1: "ĐỈNH CAO",
+              tag2: "KHÔNG NGHẼN",
+              tag3: "ĐỘ TRỄ CỰC THẤP",
+              text1: "Ryzen 7 7800X3D với 96MB 3D V-Cache là CPU chơi game esport số 1 thế giới, loại bỏ hoàn toàn hiện tượng tụt 1% Low FPS trong combat đông người.",
+              text2: "Chuột Logitech Superlight 2 (4000Hz / 0.25ms) kết hợp phím Wooting 60HE (0.1mm Rapid Trigger) tạo chuỗi phản hồi tín hiệu nhanh nhất trên cổng USB.",
+              text3: "Màn hình LG Nano-IPS 165Hz OC 180Hz bật G-Sync Full Range đồng bộ 300+ FPS mượt mà tuyệt đối, không có độ trễ phím/chuột."
+            },
+            silent: {
+              score: "96",
+              tag1: "DƯỚI 30dB",
+              tag2: "NHIỆT CỰC MÁT",
+              tag3: "TỐI ƯU Q4/Q8",
+              text1: "Điện áp CPU VCore 1.085V (Curve -20) giúp CPU chỉ ăn 58W khi tải nặng, quạt tản AIO duy trì dưới 800 RPM hoàn toàn im lặng về đêm.",
+              text2: "16GB VRAM trên 4070 Ti Super load trọn vẹn mô hình LLM Qwen-2.5 14B Q4 hoặc Llama-3.3 8B FP16 với tốc độ sinh từ > 85 tokens/giây.",
+              text3: "Nhiệt độ phòng và VRM duy trì dưới 45°C không cần quạt thổi phụ, bảo toàn độ tĩnh lặng tuyệt đối cho không gian làm việc."
+            }
+          },
+          missing: {
+            dev: {
+              score: "74",
+              tag1: "NGHẼN BĂNG THÔNG RAM",
+              tag2: "iGPU TÍCH HỢP",
+              tag3: "KHUYẾN NGHỊ NÂNG CẤP",
+              text1: "Phát hiện hệ thống chỉ cắm 1 thanh RAM 16GB ở khe A2 (chạy Single-Channel 32-bit). Băng thông RAM giảm 50% (31.2 GB/s), làm tụt ~18% hiệu năng CPU.",
+              text2: "Hệ thống không có GPU rời, đang dùng iGPU AMD Radeon tích hợp (2 CUs) chia sẻ RAM hệ thống để xuất hình.",
+              text3: "Khi chạy Docker cluster, 16GB RAM sẽ sớm bị tràn bộ nhớ (>90%). Khuyến nghị cắm thêm 1 thanh 16GB vào khe B2 để kích hoạt Dual-Channel 128-bit."
+            },
+            creator: {
+              score: "58",
+              tag1: "THIẾU CARD ĐỒ HỌA",
+              tag2: "TRÀN BỘ NHỚ",
+              tag3: "CẦN LẮP THÊM GPU",
+              text1: "Không có GPU rời khiến Premiere/DaVinci không thể bật CUDA/NVENC hardware render, bắt CPU phải gánh 100% bằng phần mềm.",
+              text2: "Chỉ có 1 ổ SSD NVMe làm giảm tốc độ đọc/ghi dữ liệu tạm thời (cache scratch disk) khi dựng timeline 4K.",
+              text3: "Cấu hình chưa đáp ứng tốt nhu cầu Creator. Cần lắp thêm GPU NVIDIA RTX và cắm thêm 1 thanh RAM 16GB vào khe B2."
+            },
+            esports: {
+              score: "65",
+              tag1: "iGPU YẾU",
+              tag2: "TRỄ BỘ NHỚ CAO",
+              tag3: "CHỈ CHƠI 720p LOW",
+              text1: "Đồ họa tích hợp Radeon iGPU chỉ đạt 45-60 FPS ở mức thiết lập 720p Low, không đủ kéo màn hình 1440p 165Hz.",
+              text2: "RAM Single-Channel làm tăng độ trễ bộ nhớ lên 84ns, gây hiện tượng khựng khung hình (1% Low FPS) khi giao tranh.",
+              text3: "Cần cắm thêm GPU rời vào khe PCIe x16 và thêm thanh RAM thứ 2 để mở khóa toàn bộ 300+ FPS của CPU 7800X3D."
+            },
+            silent: {
+              score: "88",
+              tag1: "TIẾT KIỆM ĐIỆN",
+              tag2: "IM LẶNG TUYỆT ĐỐI",
+              tag3: "CHỈ CHẠY LLM NHỎ",
+              text1: "Không có GPU rời giúp tổng công suất toàn hệ thống giảm xuống chỉ 118W khi tải nặng, máy chạy êm tuyệt đối.",
+              text2: "Chỉ chạy được các model AI cỡ nhỏ (Llama-3.2 3B Q4) bằng CPU AVX-512 với tốc độ ~14 tokens/giây do thiếu VRAM.",
+              text3: "Thích hợp làm máy chủ silent server gia đình. Nếu muốn làm AI Lab chuyên sâu, cần trang bị thêm GPU 16GB VRAM."
+            }
+          }
+        }
+      }
+    };
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'EN' ? 'VI' : 'EN';
+      document.getElementById('langLabel').innerText = currentLang === 'EN' ? 'VI' : 'EN';
+      applyLanguage();
+    }
+
+    function applyLanguage() {
+      const dict = i18nData[currentLang];
+      document.getElementById('uiHeaderHint').innerHTML = `<i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5 text-sky-500"></i> ${dict.headerHint}`;
+      document.getElementById('uiUptimeLabel').innerText = dict.uptime;
+      document.getElementById('uiBusStatus').innerText = dict.busStatus;
+      document.getElementById('uiExportBtn').innerText = dict.exportBtn;
+      document.getElementById('uiPerCoreLabel').innerText = dict.perCore;
+      document.getElementById('uiPeripheralsTitle').innerText = dict.peripheralsTitle;
+      document.getElementById('uiCopilotTitle').innerText = dict.copilotTitle;
+      document.getElementById('uiCopilotDesc').innerText = dict.copilotDesc;
+      document.getElementById('uiSynergyLabel').innerText = dict.synergyLabel;
+      document.getElementById('uiDiagnosisBtn').innerText = dict.diagnosisBtn;
+      document.getElementById('uiPillar1Header').innerText = dict.pillar1;
+      document.getElementById('uiPillar2Header').innerText = dict.pillar2;
+      document.getElementById('uiPillar3Header').innerText = dict.pillar3;
+      document.getElementById('uiLowLevelTitle').innerText = dict.lowLevelTitle;
+      document.getElementById('uiArchTitle').innerText = dict.archTitle;
+
+      const personaKey = document.getElementById('personaSelect').value;
+      onPersonaChange(personaKey);
+      lucide.createIcons();
+    }
+
+    function onPersonaChange(personaKey) {
+      const data = i18nData[currentLang].personas[currentRig][personaKey];
+      if (!data) return;
+
+      document.getElementById('globalSynergyScore').innerHTML = `${data.score} <span class="text-xs font-normal text-slate-400">/ 100</span>`;
+      document.getElementById('aiTag1').innerText = data.tag1;
+      document.getElementById('aiTag2').innerText = data.tag2;
+      document.getElementById('aiTag3').innerText = data.tag3;
+      document.getElementById('aiText1').innerHTML = data.text1;
+      document.getElementById('aiText2').innerHTML = data.text2;
+      document.getElementById('aiText3').innerHTML = data.text3;
+    }
+
+    function triggerAiDiagnosis() {
+      const scoreEl = document.getElementById('globalSynergyScore');
+      scoreEl.innerHTML = `<span class="animate-pulse text-sky-500 text-sm">Evaluating...</span>`;
+      setTimeout(() => {
+        const sel = document.getElementById('personaSelect').value;
+        onPersonaChange(sel);
+      }, 600);
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      const icon = document.getElementById('themeIcon');
+      const label = document.getElementById('themeLabel');
+
+      if (isDark) {
+        icon.setAttribute('data-lucide', 'sun');
+        label.innerText = 'Light';
+      } else {
+        icon.setAttribute('data-lucide', 'moon');
+        label.innerText = 'Dark';
+      }
+      lucide.createIcons();
+      drawRealisticPcbBuses();
+    }
+
+    // ================= DYNAMIC BUS ROUTER (ADAPTS TO MISSING COMPONENTS) =================
+    function drawRealisticPcbBuses() {
+      const svg = document.getElementById('busSvg');
+      const area = document.getElementById('schematicArea');
+      if (!svg || !area) return;
+
+      const areaRect = area.getBoundingClientRect();
+      const cpu = document.getElementById('nodeCpu');
+      const ram = document.getElementById('nodeRam');
+      const nvme1 = document.getElementById('nodeNvme1');
+      const nvme2 = document.getElementById('nodeNvme2');
+      const gpu = document.getElementById('nodeGpu');
+
+      if (!cpu || !ram || !nvme1 || !gpu) return;
+
+      const getPos = (el) => {
+        const r = el.getBoundingClientRect();
+        return {
+          left: r.left - areaRect.left,
+          top: r.top - areaRect.top,
+          right: r.right - areaRect.left,
+          bottom: r.bottom - areaRect.top,
+          cx: r.left - areaRect.left + r.width / 2,
+          cy: r.top - areaRect.top + r.height / 2,
+          w: r.width,
+          h: r.height
+        };
+      };
+
+      const cCpu = getPos(cpu);
+      const cRam = getPos(ram);
+      const cNvme1 = getPos(nvme1);
+      const cNvme2 = getPos(nvme2);
+      const cGpu = getPos(gpu);
+
+      const isDark = document.documentElement.classList.contains('dark');
+      
+      const copperBase = isDark ? '#1e293b' : '#cbd5e1';
+      const cyanBus = isDark ? '#0ea5e9' : '#0284c7';
+      const indigoBus = isDark ? '#6366f1' : '#4338ca';
+      const emeraldBus = isDark ? '#10b981' : '#047857';
+      const goldVia = isDark ? '#fbbf24' : '#d97706';
+
+      let svgContent = '';
+
+      // 1. RAM BUS (Active or Single-Channel)
+      const ramOffsets = currentRig === 'missing' ? [-2, 2] : [-6, -2, 2, 6];
+      ramOffsets.forEach((offset, idx) => {
+        const y = cCpu.cy + offset * 3;
+        svgContent += `
+          <line x1="${cCpu.right}" y1="${y}" x2="${cRam.left}" y2="${y}" stroke="${copperBase}" stroke-width="2.5" />
+          <line x1="${cCpu.right}" y1="${y}" x2="${cRam.left}" y2="${y}" stroke="${currentRig === 'missing' ? '#f59e0b' : cyanBus}" stroke-width="1.5" class="trace-bus-fast" style="animation-delay: ${idx * 0.2}s" />
+          <circle cx="${cCpu.right + 4}" cy="${y}" r="2" fill="${goldVia}" />
+          <circle cx="${cRam.left - 4}" cy="${y}" r="2" fill="${goldVia}" />
+        `;
+      });
+
+      // 2. CPU TO M.2_1 NVMe GEN4
+      const nvme1StartX = cCpu.left + cCpu.w * 0.25;
+      const nvme1BendY = cNvme1.top - 12;
+      [-3, 3].forEach(offset => {
+        const sx = nvme1StartX + offset;
+        const tx = cNvme1.cx + offset;
+        svgContent += `
+          <path d="M ${sx} ${cCpu.bottom} L ${sx} ${nvme1BendY} L ${tx} ${nvme1BendY} L ${tx} ${cNvme1.top}" 
+                fill="none" stroke="${copperBase}" stroke-width="3" />
+          <path d="M ${sx} ${cCpu.bottom} L ${sx} ${nvme1BendY} L ${tx} ${nvme1BendY} L ${tx} ${cNvme1.top}" 
+                fill="none" stroke="${cyanBus}" stroke-width="1.5" class="trace-bus" />
+          <circle cx="${tx}" cy="${cNvme1.top - 2}" r="2" fill="${goldVia}" />
+        `;
+      });
+
+      // 3. CPU TO CHIPSET TO M.2_2 (If popuplated)
+      if (currentRig === 'full') {
+        const nvme2StartX = cCpu.right - cCpu.w * 0.25;
+        const nvme2BendY = cNvme2.top - 12;
+        [-3, 3].forEach(offset => {
+          const sx = nvme2StartX + offset;
+          const tx = cNvme2.cx + offset;
+          svgContent += `
+            <path d="M ${sx} ${cCpu.bottom} L ${sx} ${nvme2BendY} L ${tx} ${nvme2BendY} L ${tx} ${cNvme2.top}" 
+                  fill="none" stroke="${copperBase}" stroke-width="3" />
+            <path d="M ${sx} ${cCpu.bottom} L ${sx} ${nvme2BendY} L ${tx} ${nvme2BendY} L ${tx} ${cNvme2.top}" 
+                  fill="none" stroke="${emeraldBus}" stroke-width="1.5" class="trace-bus" />
+            <circle cx="${tx}" cy="${cNvme2.top - 2}" r="2" fill="${goldVia}" />
+          `;
+        });
+      }
+
+      // 4. PCIe 4.0 x16 GPU RIBBON (Dimmed/Standby if dGPU is missing)
+      const pcieOffsets = [-18, -12, -6, 0, 6, 12, 18];
+      pcieOffsets.forEach((offset, idx) => {
+        const x = cCpu.cx + offset;
+        const startY = cNvme1.bottom + 4;
+        const isDgpuActive = currentRig === 'full';
+        svgContent += `
+          <line x1="${x}" y1="${startY}" x2="${x}" y2="${cGpu.top}" stroke="${copperBase}" stroke-width="2.5" opacity="${isDgpuActive ? '1' : '0.25'}" />
+          ${isDgpuActive ? `<line x1="${x}" y1="${startY}" x2="${x}" y2="${cGpu.top}" stroke="${indigoBus}" stroke-width="1.5" class="trace-bus-fast" style="animation-delay: ${idx * 0.15}s" />` : ''}
+          <circle cx="${x}" cy="${cGpu.top - 2}" r="2" fill="${goldVia}" opacity="${isDgpuActive ? '1' : '0.3'}" />
+        `;
+      });
+
+      // Silk Screen PCB Text Labels
+      const ramLabel = currentRig === 'missing' ? 'DDR5_CH_A [32-BIT SINGLE]' : 'DDR5_CH_A/B [64-BIT DUAL]';
+      const gpuLabel = currentRig === 'missing' ? 'PCIe 4.0 x16 [STANDBY - NO CARD]' : 'PCIe 4.0 x16 [DIRECT CPU LINK]';
+      
+      svgContent += `
+        <text x="${(cCpu.right + cRam.left) / 2}" y="${cCpu.cy - 10}" fill="${currentRig === 'missing' ? '#f59e0b' : cyanBus}" font-family="JetBrains Mono" font-size="8.5" font-weight="bold" text-anchor="middle" letter-spacing="0.5">${ramLabel}</text>
+        <text x="${cCpu.cx}" y="${(cNvme1.bottom + cGpu.top) / 2}" fill="${currentRig === 'missing' ? '#64748b' : indigoBus}" font-family="JetBrains Mono" font-size="8.5" font-weight="bold" text-anchor="middle" letter-spacing="0.5">${gpuLabel}</text>
+      `;
+
+      svg.innerHTML = svgContent;
+    }
+
+    window.addEventListener('resize', drawRealisticPcbBuses);
+    window.addEventListener('DOMContentLoaded', () => {
+      applyLanguage();
+      setTimeout(drawRealisticPcbBuses, 100);
+    });
+
+    // Inspector Data Store
+    const inspectorData = {
+      cpu: {
+        title: "AMD Ryzen 7 7800X3D (Zen 4 Raphael)",
+        badge: "AM5 • 8C/16T • 96MB V-CACHE",
+        icon: "cpu",
+        aiScore: "SILICON SCORE: 98/100",
+        aiText_EN: "This 7800X3D sample runs stably with Curve Optimizer -20 on all cores at just 1.085V VCore under heavy load. The 96MB 3D V-Cache stack eliminates memory latency penalties for both 1440p gaming and large codebase indexing.",
+        aiText_VI: "Con 7800X3D này đang chạy Curve Optimizer -20 All Cores với điện áp VCore chỉ 1.085V khi tải nặng. Nhiệt độ Tdie 56.2°C chứng tỏ tản nhiệt tiếp xúc cực tốt. Cache 3D V-Cache 96MB bù đắp triệt để độ trễ RAM khi chơi game 1440p và tăng tốc biên dịch file TypeScript lớn.",
+        specs: [
+          { label: "Silicon Stepping", val: "RPL-B2 (CPUID: 00A60F12)" },
+          { label: "CCD / CCX Config", val: "1x CCD (8 Cores Active) + 1x cIOD" },
+          { label: "L1 Data / Inst Cache", val: "8 x 32 KB / 8 x 32 KB (8-way)" },
+          { label: "L2 Cache (Dedicated)", val: "8 x 1 MB (1 MB/Core)" },
+          { label: "L3 3D V-Cache", val: "96 MB (32MB Core + 64MB 3D Stack)" },
+          { label: "Instruction Sets", val: "AVX-512, BMI2, SHA, AES, AMD-V" },
+          { label: "FCLK Frequency", val: "2,000 MHz (Synchronous 1:1)" },
+          { label: "Curve Optimizer", val: "All Cores: -20 Negative Offset" },
+          { label: "Silicon SP Quality", val: "SP 114 (Gold Sample)" },
+          { label: "TJMax Temperature", val: "89.0 °C (Headroom: +32.8 °C)" }
+        ],
+        arch_EN: "Zen 4 microarchitecture combined with TSMC direct-bonded 3D V-Cache across TSVs providing >2.5 TB/s bandwidth between L3 cache and core compute dies.",
+        arch_VI: "Vi kiến trúc Zen 4 kết hợp công nghệ TSMC 3D V-Cache (Direct-bonded SRAM qua TSVs với băng thông > 2.5 TB/s giữa L3 và CPU cores). Controller I/O 6nm rời hỗ trợ 28 lanes PCIe 5.0."
+      },
+      ram: {
+        title: "G.Skill Trident Z5 Neo DDR5 Array",
+        badge: "DDR5-6000 • SK HYNIX A-DIE",
+        icon: "layers",
+        aiScore: "RAM SYNERGY: 99/100",
+        aiText_EN: "Memory array running on EXPO I DDR5-6000 CL30 profile syncs with AMD Infinity Fabric FCLK 2000MHz. In Dual-Channel mode, 128-bit bus width delivers 62.4 GB/s throughput.",
+        aiText_VI: "Mảng bộ nhớ chạy profile EXPO I DDR5-6000 CL30 đồng bộ với Infinity Fabric FCLK 2000MHz. Chạy kênh đôi Dual-Channel 128-bit cho băng thông đọc 62.4 GB/s.",
+        specs: [
+          { label: "DRAM Die Manufacturer", val: "SK Hynix A-Die (16Gb Density)" },
+          { label: "Primary Timings", val: "CL30 - tRCD 38 - tRP 38 - tRAS 96" },
+          { label: "Secondary (tRFC / tREFI)", val: "tRFC 480ns • tREFI 65,535" },
+          { label: "Memory Latency", val: "63.8 ns (AIDA64 Memory Benchmark)" },
+          { label: "PMIC Voltage", val: "1.350 V / 1.350 V (Richtek PMIC)" }
+        ],
+        arch_EN: "Daisy-chain motherboard trace topology achieves highest signal integrity on slots A2 + B2.",
+        arch_VI: "Topology Daisy-Chain trên MSI Tomahawk phát huy hiệu quả cao nhất ở 2 khe A2 + B2."
+      },
+      gpu: {
+        title: "Graphics Processor Subsystem",
+        badge: "PCIe 4.0 x16 BUS CONTROLLER",
+        icon: "monitor",
+        aiScore: "GRAPHICS VERDICT: ACTIVE",
+        aiText_EN: "Inspects primary PCIe slot and active display controller (NVIDIA Discrete GPU or AMD Integrated Radeon RDNA2 iGPU).",
+        aiText_VI: "Kiểm tra khe cắm PCIe chính và card đồ họa đang xuất hình (Card rời NVIDIA hoặc đồ họa tích hợp AMD Radeon iGPU).",
+        specs: [
+          { label: "Primary Slot Status", val: "PCIe Gen 4.0 x16 Socket" },
+          { label: "Resizable BAR", val: "Supported (Direct VRAM Access)" },
+          { label: "Display Outputs", val: "DisplayPort 1.4a + HDMI 2.1a" }
+        ],
+        arch_EN: "Direct discrete lanes connect straight to CPU root complex without chipset latency.",
+        arch_VI: "Làn PCIe đồ họa nối trực tiếp vào CPU root complex, không đi qua cầu chipset."
+      }
+    };
+
+    function openInspector(componentKey) {
+      const data = inspectorData[componentKey] || inspectorData['cpu'];
+
+      document.getElementById('inspTitle').innerText = data.title;
+      document.getElementById('inspBadge').innerText = data.badge;
+      document.getElementById('inspIcon').setAttribute('data-lucide', data.icon);
+      document.getElementById('inspAiScore').innerText = data.aiScore;
+      document.getElementById('inspAiText').innerText = currentLang === 'EN' ? data.aiText_EN : data.aiText_VI;
+      document.getElementById('inspArchText').innerText = currentLang === 'EN' ? data.arch_EN : data.arch_VI;
+
+      // Populate Specs Grid
+      const grid = document.getElementById('inspDetailsGrid');
+      grid.innerHTML = data.specs.map(s => `
+        <div class="dark:bg-slate-950 bg-slate-100 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 flex flex-col justify-between shadow-sm">
+          <span class="text-[11px] dark:text-slate-400 text-slate-600 font-bold">${s.label}</span>
+          <span class="text-xs font-black dark:text-white text-slate-900 mt-0.5">${s.val}</span>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+
+      // Show Drawer + Lock Body Scroll
+      document.body.style.overflow = 'hidden';
+      const drawer = document.getElementById('inspectorDrawer');
+      drawer.classList.remove('opacity-0', 'pointer-events-none');
+      drawer.classList.add('opacity-100', 'pointer-events-auto');
+      drawer.querySelector('.drawer-panel').classList.remove('translate-x-full');
+      drawer.querySelector('.drawer-panel').classList.add('translate-x-0');
+    }
+
+    function closeInspector() {
+      document.body.style.overflow = 'auto';
+      const drawer = document.getElementById('inspectorDrawer');
+      drawer.classList.remove('opacity-100', 'pointer-events-auto');
+      drawer.classList.add('opacity-0', 'pointer-events-none');
+      drawer.querySelector('.drawer-panel').classList.remove('translate-x-0');
+      drawer.querySelector('.drawer-panel').classList.add('translate-x-full');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeInspector();
+    });
+  </script>
+</body>
+</html>
