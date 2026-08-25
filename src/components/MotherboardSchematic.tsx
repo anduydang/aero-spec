@@ -1,17 +1,15 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { CircuitBoard, Cpu, Layers, HardDrive, Monitor, Shield, ArrowUpRight } from 'lucide-react';
-import type { HardwareTelemetryState, ThemeType } from '../types/hardware';
+import type { HardwareTelemetryState } from '../types/hardware';
 import { motion } from 'framer-motion';
 
 interface MotherboardSchematicProps {
   telemetry: HardwareTelemetryState;
-  theme: ThemeType;
   onInspect: (id: string) => void;
 }
 
 export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
   telemetry,
-  theme,
   onInspect,
 }) => {
   const { motherboard, cpu, ram, storage, gpu } = telemetry;
@@ -67,42 +65,12 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
     const cNvme2 = nvme2El ? getPos(nvme2El) : null;
     const cGpu = getPos(gpuEl);
 
-    let copperBase = '#cbd5e1';
-    let primaryBus = '#0284c7';
-    let secondaryBus = '#4f46e5';
-    let goldVia = '#d97706';
-    let labelBg = '#ffffff';
-    let labelBorder = '#cbd5e1';
-
-    if (theme === 'slate') {
-      copperBase = '#1e293b';
-      primaryBus = '#00f0ff';
-      secondaryBus = '#818cf8';
-      goldVia = '#fbbf24';
-      labelBg = '#070d19';
-      labelBorder = '#334155';
-    } else if (theme === 'latte') {
-      copperBase = '#d6c7b5';
-      primaryBus = '#ea580c';
-      secondaryBus = '#b45309';
-      goldVia = '#b45309';
-      labelBg = '#faf4eb';
-      labelBorder = '#dfd1be';
-    } else if (theme === 'matcha') {
-      copperBase = '#b8d7c4';
-      primaryBus = '#059669';
-      secondaryBus = '#0d9488';
-      goldVia = '#ca8a04';
-      labelBg = '#f2f8f4';
-      labelBorder = '#cde2d6';
-    } else if (theme === 'sakura') {
-      copperBase = '#e5c4de';
-      primaryBus = '#e11d48';
-      secondaryBus = '#9333ea';
-      goldVia = '#e11d48';
-      labelBg = '#fcf4fa';
-      labelBorder = '#f1d4e9';
-    }
+    const copperBase = 'var(--trace-copper)';
+    const primaryBus = 'var(--trace-primary)';
+    const secondaryBus = 'var(--trace-secondary)';
+    const goldVia = 'var(--trace-via)';
+    const labelBg = 'var(--trace-label-bg)';
+    const labelBorder = 'var(--trace-label-border)';
 
     let svgContent = '';
 
@@ -177,7 +145,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
     `;
 
     svg.innerHTML = svgContent;
-  }, [gpu.isDiscrete, ram.isSingleChannel, storage.m2_2.isPopulated, theme]);
+  }, [gpu.isDiscrete, ram.isSingleChannel, storage.m2_2.isPopulated]);
 
   useEffect(() => {
     drawBuses();

@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 test('aligns product version and manages the locally stored Gemini key', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('aerospec_lang', 'EN')
-    localStorage.setItem('aerospec_theme', 'slate')
+    localStorage.setItem('aerospec_theme', 'obsidian')
     localStorage.removeItem('aerospec_gemini_key')
   })
   await page.goto('/')

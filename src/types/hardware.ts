@@ -1,7 +1,7 @@
 export type PersonaType = 'dev' | 'creator' | 'esports' | 'silent';
 export type RigProfileType = 'live' | 'full' | 'missing';
 export type LanguageType = 'EN' | 'VI';
-export type ThemeType = 'arctic' | 'latte' | 'matcha' | 'sakura' | 'slate';
+export type ThemeType = 'obsidian' | 'blueprint' | 'terminal' | 'industrial' | 'tokyo';
 export type TelemetryMode = 'live' | 'simulated';
 export type DetectionStatus = 'scanning' | 'ready' | 'unavailable' | 'error';
 

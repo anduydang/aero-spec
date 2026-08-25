@@ -2,16 +2,23 @@ import { expect, test } from '@playwright/test'
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.removeItem('aerospec_theme')
     localStorage.setItem('aerospec_lang', 'EN')
   })
   await page.goto('/')
 })
 
-test('uses the Slate default and reports browser Live mode honestly', async ({ page }) => {
-  await expect(page.locator('html')).toHaveClass(/theme-slate/)
+test('uses the Obsidian default and reports browser Live mode honestly', async ({ page }) => {
+  await expect(page.locator('html')).toHaveClass(/theme-obsidian/)
   await expect(page.getByText('Live preview unavailable', { exact: false })).toBeVisible()
   await expect(page.getByText('Intel Core i5-8400', { exact: false })).toHaveCount(0)
+})
+
+test('migrates a legacy stored theme to the matching new identity', async ({ page }) => {
+  await page.evaluate(() => localStorage.setItem('aerospec_theme', 'matcha'))
+  await page.reload()
+
+  await expect(page.locator('html')).toHaveClass(/theme-terminal/)
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('aerospec_theme'))).toBe('terminal')
 })
 
 test('keeps secondary controls in a settings popover', async ({ page }) => {

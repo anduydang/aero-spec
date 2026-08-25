@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 test('uses the same hardware score in the footer and Flex Card', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('aerospec_lang', 'EN')
-    localStorage.setItem('aerospec_theme', 'slate')
+    localStorage.setItem('aerospec_theme', 'obsidian')
   })
   await page.goto('/')
 

@@ -11,13 +11,14 @@ import { getDynamicInspectorItem } from './data/inspectorGenerator';
 import { i18nData } from './data/i18nData';
 import { soundFx } from './utils/soundFx';
 import { calculateHardwareSynergyScore } from './utils/scoreCalculator';
+import { resolveStoredTheme } from './theme/themeConfig';
 
 const DeepInspectorDrawer = lazy(() => import('./components/DeepInspectorDrawer').then((module) => ({ default: module.DeepInspectorDrawer })));
 const FlexCardModal = lazy(() => import('./components/FlexCardModal').then((module) => ({ default: module.FlexCardModal })));
 const AiAdvisorModal = lazy(() => import('./components/AiAdvisorModal').then((module) => ({ default: module.AiAdvisorModal })));
 
 export function App() {
-  const [theme, setTheme] = useState<ThemeType>(() => (localStorage.getItem('aerospec_theme') as ThemeType) || 'slate');
+  const [theme, setTheme] = useState<ThemeType>(() => resolveStoredTheme(localStorage.getItem('aerospec_theme')));
   const [lang, setLang] = useState<LanguageType>(() => (localStorage.getItem('aerospec_lang') as LanguageType) || 'VI');
   const [persona, setPersona] = useState<PersonaType>('dev');
   const [rigProfile, setRigProfile] = useState<RigProfileType>('live');
@@ -66,7 +67,7 @@ export function App() {
   useEffect(() => {
     document.documentElement.className = '';
     document.documentElement.classList.add(`theme-${theme}`);
-    if (theme === 'slate') {
+    if (theme === 'obsidian' || theme === 'terminal' || theme === 'tokyo') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
@@ -124,7 +125,6 @@ export function App() {
 
         <MotherboardSchematic 
           telemetry={telemetry}
-          theme={theme}
           onInspect={handleInspect}
         />
 
