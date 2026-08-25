@@ -15,11 +15,26 @@ export const SiliconMetrics: React.FC<SiliconMetricsProps> = ({
   perCoreLabel
 }) => {
   const { cpu, ram, cooler } = telemetry;
+  const { capabilities } = telemetry.telemetry;
   const coreCount = cpu.perCoreLoads.length || cpu.cores || 6;
   const gridColClass = coreCount <= 4 ? 'grid-cols-4' : coreCount <= 6 ? 'grid-cols-6' : coreCount <= 8 ? 'grid-cols-8' : 'grid-cols-12';
 
+  if (!capabilities.cpuIdentity && !capabilities.ramIdentity) {
+    return (
+      <section className="order-2 xl:order-1">
+        <div className="studio-card rounded-2xl p-5 flex flex-col gap-2 min-h-40 justify-center">
+          <Cpu className="w-5 h-5 theme-primary-text" />
+          <h2 className="text-sm font-black theme-title">CPU & memory data unavailable</h2>
+          <p className="text-xs leading-relaxed theme-muted">
+            Live WMI detection runs in the AeroSpec desktop app. Browser preview never fills these cards with simulated values.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section className="col-span-12 xl:col-span-3 flex flex-col justify-between gap-2 h-full">
+    <section className="order-2 xl:order-1 flex flex-col gap-3">
       
       {/* CPU Detailed Card */}
       <motion.div 
@@ -49,7 +64,7 @@ export const SiliconMetrics: React.FC<SiliconMetricsProps> = ({
         </div>
 
         {/* Telemetry 4-Grid Clean Studio Typography */}
-        <div className="grid grid-cols-2 gap-1.5 font-mono text-xs">
+        {capabilities.cpuSensors ? <div className="grid grid-cols-2 gap-1.5 font-mono text-xs">
           <div className="theme-chip-box p-1.5 px-2 rounded-lg shadow-sm flex flex-col justify-between">
             <span className="text-[9px] theme-muted font-bold uppercase tracking-wider">
               Avg Clock
@@ -89,10 +104,14 @@ export const SiliconMetrics: React.FC<SiliconMetricsProps> = ({
               <span className="text-[9px] theme-muted">W</span>
             </div>
           </div>
-        </div>
+        </div> : (
+          <div className="theme-chip-box rounded-xl p-2.5 text-xs theme-muted leading-relaxed">
+            Temperature, voltage, and package-power sensors are unavailable through the native WMI probe.
+          </div>
+        )}
 
         {/* Dynamic Core Live Bars */}
-        <div className="flex flex-col gap-1 mt-0.5">
+        {capabilities.cpuLoad && <div className="flex flex-col gap-1 mt-0.5">
           <div className="flex justify-between items-center text-[10px] font-mono theme-title">
             <span className="font-bold">{perCoreLabel} ({coreCount} Cores)</span>
             <span className="theme-primary-text font-extrabold">
@@ -109,7 +128,7 @@ export const SiliconMetrics: React.FC<SiliconMetricsProps> = ({
               </div>
             ))}
           </div>
-        </div>
+        </div>}
       </motion.div>
 
       {/* RAM & Timings Card */}
@@ -144,7 +163,7 @@ export const SiliconMetrics: React.FC<SiliconMetricsProps> = ({
         </div>
 
         {/* Timings Table */}
-        <div className="theme-chip-box rounded-lg p-2 shadow-sm flex flex-col gap-1 font-mono text-[10px]">
+        {capabilities.ramTimings ? <div className="theme-chip-box rounded-lg p-2 shadow-sm flex flex-col gap-1 font-mono text-[10px]">
           <div className="flex justify-between items-center">
             <span className="theme-muted">Primary Timings:</span>
             <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{ram.primaryTimings}</span>
@@ -153,7 +172,11 @@ export const SiliconMetrics: React.FC<SiliconMetricsProps> = ({
             <span className="theme-muted">Infinity Fabric (FCLK):</span>
             <span className="font-extrabold theme-primary-text">{ram.fclkMhz} MHz (1:1)</span>
           </div>
-        </div>
+        </div> : (
+          <div className="theme-chip-box rounded-xl p-2.5 text-xs theme-muted">
+            Detailed timings and fabric clock are not exposed by WMI.
+          </div>
+        )}
 
         {/* Single Channel Warning */}
         {ram.isSingleChannel && (
@@ -165,7 +188,7 @@ export const SiliconMetrics: React.FC<SiliconMetricsProps> = ({
       </motion.div>
 
       {/* Thermal Solution Card */}
-      <motion.div 
+      {capabilities.cpuSensors ? <motion.div
         whileHover={{ y: -1 }}
         onClick={() => onInspect('cooler')} 
         className="studio-card rounded-2xl p-2.5 flex flex-col gap-1.5 cursor-pointer group"
@@ -192,7 +215,11 @@ export const SiliconMetrics: React.FC<SiliconMetricsProps> = ({
             <span className="block text-[9px] theme-muted">Coolant</span>
           </div>
         </div>
-      </motion.div>
+      </motion.div> : (
+        <div className="studio-card rounded-2xl p-3 text-xs theme-muted">
+          Cooler telemetry is unavailable through WMI.
+        </div>
+      )}
 
     </section>
   );

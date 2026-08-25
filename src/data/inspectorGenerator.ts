@@ -6,6 +6,8 @@ export function getDynamicInspectorItem(
   _lang: LanguageType,
   _persona: PersonaType
 ): InspectorItem {
+  void _lang;
+  void _persona;
   const { cpu, ram, motherboard, storage, gpu, cooler, psu, network, peripherals } = telemetry;
   const capabilities = telemetry.telemetry.capabilities;
   const isIntel = cpu.name.toLowerCase().includes('intel');

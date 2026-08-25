@@ -16,7 +16,7 @@ import { soundFx } from './utils/soundFx';
 import { calculateHardwareSynergyScore } from './utils/scoreCalculator';
 
 export function App() {
-  const [theme, setTheme] = useState<ThemeType>(() => (localStorage.getItem('aerospec_theme') as ThemeType) || 'arctic');
+  const [theme, setTheme] = useState<ThemeType>(() => (localStorage.getItem('aerospec_theme') as ThemeType) || 'slate');
   const [lang, setLang] = useState<LanguageType>(() => (localStorage.getItem('aerospec_lang') as LanguageType) || 'VI');
   const [persona, setPersona] = useState<PersonaType>('dev');
   const [rigProfile, setRigProfile] = useState<RigProfileType>('live');
@@ -84,7 +84,6 @@ export function App() {
     [telemetry, persona],
   );
   const dict = i18nData[lang];
-  const currentInsight = dict.personas[rigProfile][persona];
   const activeInspectorItem = activeInspectorId ? getDynamicInspectorItem(activeInspectorId, telemetry, lang, persona) : null;
 
   const handleSelectTheme = (newTheme: ThemeType) => setTheme(newTheme);
@@ -96,12 +95,12 @@ export function App() {
   };
 
   return (
-    <div className="p-2.5 sm:p-3 xl:p-3.5 select-none flex flex-col gap-2.5 max-w-[1780px] mx-auto min-h-screen xl:h-screen xl:max-h-screen xl:overflow-hidden justify-between">
+    <div data-testid="app-shell" className="p-2.5 sm:p-3 xl:p-4 flex flex-col gap-3 max-w-[1780px] mx-auto min-h-screen">
       {/* Top Clean Studio Header */}
       <Header 
         hostName={telemetry.hostName}
         uptime={telemetry.uptime}
-        isLiveDetected={telemetry.isLiveDetected}
+        telemetryStatus={telemetry.telemetry}
         lang={lang}
         theme={theme}
         persona={persona}
@@ -115,7 +114,7 @@ export function App() {
       />
 
       {/* 3-Column Core Telemetry Dashboard */}
-      <main className="grid grid-cols-12 gap-2.5 xl:gap-3 flex-1 min-h-0 items-stretch">
+      <main className="grid grid-cols-1 xl:grid-cols-[minmax(250px,0.8fr)_minmax(520px,1.8fr)_minmax(250px,0.8fr)] gap-3 flex-1 items-start">
         <SiliconMetrics 
           telemetry={telemetry}
           onInspect={handleInspect}
@@ -142,10 +141,6 @@ export function App() {
         copilotDesc={dict.copilotDesc}
         synergyLabel={dict.synergyLabel}
         diagnosisBtn={dict.diagnosisBtn}
-        pillar1Header={dict.pillar1}
-        pillar2Header={dict.pillar2}
-        pillar3Header={dict.pillar3}
-        insight={currentInsight}
       />
 
       {/* Slide-Over Deep Component Inspector Drawer */}

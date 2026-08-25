@@ -38,23 +38,6 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const dialogRef = useAccessibleDialog<HTMLDivElement>({ isOpen, onClose });
 
-  // Initialize initial welcome message
-  useEffect(() => {
-    if (messages.length === 0) {
-      const detectedContext = buildAdvisorContext(telemetry, score);
-      setMessages([
-        {
-          id: 'welcome',
-          sender: 'ai',
-          text: lang === 'EN'
-            ? `Hello! I am your AeroSpec hardware upgrade consultant. I will only use fields that AeroSpec actually detected.\n\n**Current context**\n\n\`\`\`text\n${detectedContext}\n\`\`\`\n\nConnect your Gemini API key to ask upgrade and compatibility questions.`
-            : `Xin chào! Tôi là trợ lý tư vấn nâng cấp phần cứng AeroSpec. Tôi chỉ dùng những trường mà AeroSpec thực sự phát hiện được.\n\n**Ngữ cảnh hiện tại**\n\n\`\`\`text\n${detectedContext}\n\`\`\`\n\nKết nối Gemini API key để hỏi về nâng cấp và tương thích.`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
-      ]);
-    }
-  }, [lang, messages.length, score, telemetry]);
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
@@ -87,7 +70,7 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
 
     soundFx.playClick();
     const userMsg: Message = {
-      id: Date.now().toString(),
+      id: `user-${messages.length}`,
       sender: 'user',
       text,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -101,7 +84,7 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
       setMessages(prev => [
         ...prev,
         {
-          id: (Date.now() + 1).toString(),
+          id: `missing-key-${messages.length}`,
           sender: 'ai',
           text: lang === 'EN'
             ? 'Gemini API Key is not connected yet. Please click the "Connect API Key" button at the top and paste your Google Gemini API Key to chat with the real AI!'
@@ -179,7 +162,7 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
       setMessages(prev => [
         ...prev,
         {
-          id: (Date.now() + 1).toString(),
+          id: `reply-${messages.length}`,
           sender: 'ai',
           text: replyText,
           timestamp: `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • ${modelDisplayName}`
@@ -190,7 +173,7 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
       setMessages(prev => [
         ...prev,
         {
-          id: (Date.now() + 1).toString(),
+          id: `error-${messages.length}`,
           sender: 'ai',
           text: `Lỗi kết nối Gemini API: ${lastErrorMsg || 'Không thể gọi AI API. Vui lòng kiểm tra lại API Key hoặc quota tài khoản Google AI Studio.'}`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -326,6 +309,35 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
 
           {/* Messages Stream Body */}
           <div className="flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4 bg-slate-950/40">
+            {messages.length === 0 && (
+              <div className="m-auto w-full max-w-2xl text-center flex flex-col items-center gap-4 py-6">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-base font-black text-white">
+                    {lang === 'EN' ? 'Ask with capability-filtered context' : 'Hỏi với ngữ cảnh đã lọc theo khả năng phát hiện'}
+                  </h4>
+                  <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-lg">
+                    {lang === 'EN'
+                      ? 'AeroSpec sends only detected fields to Gemini and clearly marks simulator profiles.'
+                      : 'AeroSpec chỉ gửi các trường đã phát hiện tới Gemini và luôn đánh dấu rõ profile giả lập.'}
+                  </p>
+                </div>
+                <div className="grid sm:grid-cols-3 gap-2.5 w-full">
+                  {quickQuestions.slice(0, 3).map((question) => (
+                    <button
+                      key={question}
+                      type="button"
+                      onClick={() => handleSendMessage(question)}
+                      className="p-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left text-xs text-slate-200 leading-relaxed cursor-pointer"
+                    >
+                      {question}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -371,20 +383,20 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
           </div>
 
           {/* Quick Prompt Chips */}
-          <div className="px-4 py-2.5 bg-slate-900/90 border-t border-slate-800 flex items-center gap-2 overflow-x-auto">
+          {messages.length > 0 && <div className="px-4 py-2.5 bg-slate-900/90 border-t border-slate-800 flex flex-wrap items-center gap-2">
             <span className="text-[11px] font-mono text-slate-400 shrink-0 font-bold flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-sky-400" /> Gợi ý:
             </span>
-            {quickQuestions.map((q, idx) => (
+            {quickQuestions.slice(0, 3).map((q, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSendMessage(q)}
-                className="px-3 py-1 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700 rounded-lg text-xs font-sans whitespace-nowrap transition cursor-pointer shrink-0"
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700 rounded-lg text-xs font-sans whitespace-normal transition cursor-pointer"
               >
                 {q}
               </button>
             ))}
-          </div>
+          </div>}
 
           {/* Chat Input Footer */}
           <div className="p-4 bg-slate-900 border-t border-slate-800 flex items-center gap-3">

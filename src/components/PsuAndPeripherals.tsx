@@ -15,6 +15,21 @@ export const PsuAndPeripherals: React.FC<PsuAndPeripheralsProps> = ({
   peripheralsTitle
 }) => {
   const { psu, network, peripherals } = telemetry;
+  const { capabilities } = telemetry.telemetry;
+
+  if (!capabilities.psu && !capabilities.network && !capabilities.peripherals) {
+    return (
+      <section className="order-3">
+        <div className="studio-card rounded-2xl p-5 flex flex-col gap-2 min-h-40 justify-center">
+          <Plug2 className="w-5 h-5 theme-primary-text" />
+          <h2 className="text-sm font-black theme-title">Power & connected devices unavailable</h2>
+          <p className="text-xs leading-relaxed theme-muted">
+            Windows WMI does not provide reliable PSU, ping, or peripheral telemetry. AeroSpec leaves these fields empty.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   const renderIcon = (iconName: string) => {
     switch (iconName) {
@@ -27,7 +42,7 @@ export const PsuAndPeripherals: React.FC<PsuAndPeripheralsProps> = ({
   };
 
   return (
-    <section className="col-span-12 xl:col-span-3 flex flex-col justify-between gap-2 h-full">
+    <section className="order-3 flex flex-col gap-3">
       
       {/* Power Supply Unit (PSU) Card */}
       <motion.div 

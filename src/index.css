@@ -8,8 +8,8 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    overscroll-behavior: none;
-    user-select: none;
+    overscroll-behavior-x: none;
+    user-select: text;
     transition: background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
@@ -173,6 +173,21 @@ body {
   color: var(--text-main);
 }
 
+button,
+select,
+[role='button'] {
+  user-select: none;
+}
+
+:where(.text-\[9px\], .text-\[10px\], .text-\[11px\]) {
+  font-size: 0.75rem;
+}
+
+:where(button, select, input, textarea, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 3px;
+}
+
 /* Reusable Theme Classes */
 .studio-card {
   background-color: var(--card-bg);
@@ -275,6 +290,17 @@ body {
 .trace-bus-fast {
   stroke-dasharray: 6, 8;
   animation: signalFlow 0.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Custom Ultra-Thin Sleek Scrollbars */

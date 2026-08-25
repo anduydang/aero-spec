@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { CircuitBoard, Cpu, Layers, HardDrive, Monitor, Shield, ArrowUpRight } from 'lucide-react';
 import type { HardwareTelemetryState, ThemeType } from '../types/hardware';
 import { motion } from 'framer-motion';
@@ -15,6 +15,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
   onInspect,
 }) => {
   const { motherboard, cpu, ram, storage, gpu } = telemetry;
+  const { capabilities } = telemetry.telemetry;
   const svgRef = useRef<SVGSVGElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
 
@@ -32,7 +33,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
     ? (ram.isSingleChannel ? 'DDR4 SINGLE-CH' : 'DDR4 DUAL-CH')
     : (ram.isSingleChannel ? 'DDR5 SINGLE-CH' : 'DDR5 DUAL-CH');
 
-  const drawBuses = () => {
+  const drawBuses = useCallback(() => {
     const svg = svgRef.current;
     const area = areaRef.current;
     if (!svg || !area) return;
@@ -176,7 +177,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
     `;
 
     svg.innerHTML = svgContent;
-  };
+  }, [gpu.isDiscrete, ram.isSingleChannel, storage.m2_2.isPopulated, theme]);
 
   useEffect(() => {
     drawBuses();
@@ -187,10 +188,32 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
       ro.disconnect();
       window.removeEventListener('resize', drawBuses);
     };
-  }, [telemetry, theme]);
+  }, [drawBuses]);
+
+  const hasSchematicData = capabilities.motherboardIdentity
+    || capabilities.cpuIdentity
+    || capabilities.ramIdentity
+    || capabilities.gpuIdentity
+    || capabilities.storageIdentity;
+
+  if (!hasSchematicData) {
+    return (
+      <section className="order-1 xl:order-2">
+        <div className="studio-card rounded-2xl p-6 min-h-[360px] flex flex-col items-center justify-center text-center gap-3">
+          <CircuitBoard className="w-8 h-8 theme-primary-text" />
+          <div>
+            <h2 className="text-base font-black theme-title">Live schematic unavailable in browser preview</h2>
+            <p className="text-xs theme-muted mt-1 max-w-md leading-relaxed">
+              Open the Tauri desktop build for WMI detection, or choose a simulator profile to explore the board map.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section className="col-span-12 xl:col-span-6 flex flex-col gap-2 h-full">
+    <section className="order-1 xl:order-2 flex flex-col gap-3">
       <div className="studio-card rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between gap-2.5 flex-1 relative overflow-hidden">
         
         {/* Board Header with BIOS Details */}

@@ -1,18 +1,22 @@
-import React, { useState } from 'react';
-import { Sparkles, ChevronDown, CheckCircle2, ShieldCheck, Lightbulb } from 'lucide-react';
-import type { HardwareScore, PersonaInsight } from '../types/hardware';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react'
+import { ChevronDown, Gauge, Sparkles } from 'lucide-react'
+
+import type { HardwareScore, ScoreFactorId } from '../types/hardware'
+import { getPriorityFactors } from '../utils/scoreCalculator'
 
 interface CopilotFooterProps {
-  score: HardwareScore;
-  copilotTitle: string;
-  copilotDesc: string;
-  synergyLabel: string;
-  diagnosisBtn: string;
-  pillar1Header: string;
-  pillar2Header: string;
-  pillar3Header: string;
-  insight: PersonaInsight;
+  score: HardwareScore
+  copilotTitle: string
+  copilotDesc: string
+  synergyLabel: string
+  diagnosisBtn: string
+}
+
+const factorLabels: Record<ScoreFactorId, string> = {
+  cpu: 'CPU',
+  ram: 'Memory',
+  gpu: 'Graphics',
+  storage: 'Storage',
 }
 
 export const CopilotFooter: React.FC<CopilotFooterProps> = ({
@@ -21,124 +25,87 @@ export const CopilotFooter: React.FC<CopilotFooterProps> = ({
   copilotDesc,
   synergyLabel,
   diagnosisBtn,
-  pillar1Header,
-  pillar2Header,
-  pillar3Header,
-  insight
 }) => {
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const displayScore = score.score === null ? '—' : String(score.score);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const priorities = getPriorityFactors(score)
+  const factorsToShow = isDetailsOpen ? priorities : priorities.slice(0, 2)
+  const isEnglish = diagnosisBtn === 'View details'
 
   return (
-    <footer className="studio-card rounded-2xl px-3.5 py-2.5 flex flex-col gap-2 shrink-0">
-      
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/5 dark:border-slate-800 pb-2">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl theme-btn-grad flex items-center justify-center shadow-md shrink-0">
-            <Sparkles className="w-4 h-4 text-white" />
+    <footer className="studio-card rounded-2xl p-3.5 flex flex-col gap-3 shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-9 h-9 rounded-xl theme-btn-grad flex items-center justify-center shadow-md shrink-0">
+            <Sparkles className="w-4 h-4" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-xs font-black theme-title leading-none">
-                {copilotTitle}
-              </h3>
-              <span className="px-1.5 py-0.2 text-[10px] font-mono font-extrabold theme-badge-primary rounded-full flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-black theme-title leading-none">{copilotTitle}</h3>
+              <span className="px-2 py-0.5 text-[10px] font-mono font-extrabold theme-badge-primary rounded-full">
                 Local compatibility analysis
               </span>
+              <span className="px-2 py-0.5 text-[10px] font-mono font-extrabold theme-badge-secondary rounded-full uppercase">
+                {score.confidence} confidence
+              </span>
             </div>
-            <p className="text-[11px] theme-muted font-medium leading-tight mt-0.5">
+            <p className="text-xs theme-muted font-medium leading-relaxed mt-1">
               {copilotDesc} • {score.verdict}
             </p>
           </div>
         </div>
 
-        {/* Dynamic Synergy Score & Grade */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-baseline gap-2 theme-chip-box px-3 py-1 rounded-xl shadow-sm">
-            <span className="text-[11px] theme-muted font-bold">{synergyLabel}</span>
-            <span className={`text-base font-black font-mono ${
-              score.score !== null && score.score >= 80 ? 'text-emerald-600 dark:text-emerald-400' : score.score !== null && score.score >= 55 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'
-            }`}>
-              <span data-testid="footer-score">{displayScore} / 100 [Grade {score.grade}]</span>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-baseline gap-2 theme-chip-box px-3 py-2 rounded-xl shadow-sm">
+            <span className="text-xs theme-muted font-bold">{synergyLabel}</span>
+            <span
+              data-testid="footer-score"
+              className={`text-base font-black font-mono ${
+                score.score !== null && score.score >= 80
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : score.score !== null && score.score >= 55
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-rose-600 dark:text-rose-400'
+              }`}
+            >
+              {score.score ?? '—'} / 100 [Grade {score.grade}]
             </span>
           </div>
-
-          <button 
-            onClick={() => setIsDetailsOpen((open) => !open)}
-            aria-expanded={isDetailsOpen}
-            className="px-3 py-1 rounded-xl theme-btn-primary text-white text-xs font-bold flex items-center gap-1.5 transition duration-150 cursor-pointer"
-          >
-            <ChevronDown className={`w-3 h-3 transition-transform ${isDetailsOpen ? 'rotate-180' : ''}`} />
-            <span>{isDetailsOpen ? 'Thu gọn' : diagnosisBtn}</span>
-          </button>
+          {priorities.length > 2 && (
+            <button
+              type="button"
+              onClick={() => setIsDetailsOpen((open) => !open)}
+              aria-expanded={isDetailsOpen}
+              className="px-3 py-2 rounded-xl theme-btn-primary text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+            >
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isDetailsOpen ? 'rotate-180' : ''}`} />
+              <span>{isDetailsOpen ? (isEnglish ? 'Collapse' : 'Thu gọn') : diagnosisBtn}</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* AI 3-Pillar Insights Grid */}
-      {isDetailsOpen && <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs">
-        
-        {/* Pillar 1 */}
-        <motion.div 
-          initial={{ opacity: 0, y: 3 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="theme-chip-box rounded-xl p-2.5 shadow-sm flex flex-col gap-1"
-        >
-          <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> {pillar1Header}
-            </span>
-            <span className="font-mono text-[9px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded font-extrabold">
-              {insight.tag1}
-            </span>
-          </div>
-          <p className="theme-sub leading-snug font-sans font-medium text-[11px]">
-            {insight.text1}
-          </p>
-        </motion.div>
-
-        {/* Pillar 2 */}
-        <motion.div 
-          initial={{ opacity: 0, y: 3 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="theme-chip-box rounded-xl p-2.5 shadow-sm flex flex-col gap-1"
-        >
-          <div className="flex items-center justify-between theme-primary-text font-bold text-[10px]">
-            <span className="flex items-center gap-1">
-              <ShieldCheck className="w-3 h-3" /> {pillar2Header}
-            </span>
-            <span className="font-mono text-[9px] theme-badge-primary px-1.5 py-0.2 rounded font-extrabold">
-              {insight.tag2}
-            </span>
-          </div>
-          <p className="theme-sub leading-snug font-sans font-medium text-[11px]">
-            {insight.text2}
-          </p>
-        </motion.div>
-
-        {/* Pillar 3 */}
-        <motion.div 
-          initial={{ opacity: 0, y: 3 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="theme-chip-box rounded-xl p-2.5 shadow-sm flex flex-col gap-1"
-        >
-          <div className="flex items-center justify-between text-amber-600 dark:text-amber-400 font-bold text-[10px]">
-            <span className="flex items-center gap-1">
-              <Lightbulb className="w-3 h-3" /> {pillar3Header}
-            </span>
-            <span className="font-mono text-[9px] bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded font-extrabold">
-              {insight.tag3}
-            </span>
-          </div>
-          <p className="theme-sub leading-snug font-sans font-medium text-[11px]">
-            {insight.text3}
-          </p>
-        </motion.div>
-
-      </div>}
-
+      {factorsToShow.length > 0 ? (
+        <div className={`grid gap-2.5 ${factorsToShow.length > 2 ? 'md:grid-cols-4' : 'md:grid-cols-2'}`}>
+          {factorsToShow.map((factor) => (
+            <div key={factor.id} className="theme-chip-box rounded-xl p-3 flex gap-2.5 shadow-sm">
+              <Gauge className="w-4 h-4 theme-primary-text shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-black theme-title">{factorLabels[factor.id]}</span>
+                  <span className="text-xs font-black font-mono theme-primary-text">{factor.score}/100</span>
+                </div>
+                <p className="text-xs theme-muted leading-relaxed mt-1">{factor.reason}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="theme-chip-box rounded-xl p-3 text-xs theme-muted">
+          {isEnglish
+            ? 'At least two detected factors are required before AeroSpec can calculate upgrade priorities.'
+            : 'AeroSpec cần phát hiện ít nhất hai nhóm linh kiện trước khi tính ưu tiên nâng cấp.'}
+        </div>
+      )}
     </footer>
-  );
-};
+  )
+}
