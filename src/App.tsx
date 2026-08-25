@@ -114,7 +114,7 @@ export function App() {
   };
 
   return (
-    <div className="p-4 lg:p-6 select-none flex flex-col gap-4 max-w-[1720px] mx-auto min-h-screen">
+    <div className="p-2.5 sm:p-3 xl:p-3.5 select-none flex flex-col gap-2.5 max-w-[1780px] mx-auto min-h-screen xl:h-screen xl:max-h-screen xl:overflow-hidden justify-between">
       {/* Top Clean Studio Header */}
       <Header 
         hostName={telemetry.hostName}
@@ -133,7 +133,7 @@ export function App() {
       />
 
       {/* 3-Column Core Telemetry Dashboard */}
-      <main className="grid grid-cols-12 gap-4">
+      <main className="grid grid-cols-12 gap-2.5 xl:gap-3 flex-1 min-h-0 items-stretch">
         <SiliconMetrics 
           telemetry={telemetry}
           onInspect={handleInspect}

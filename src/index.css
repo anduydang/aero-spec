@@ -4,52 +4,61 @@
 
 @layer base {
   html, body {
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Display', 'Segoe UI', 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior: none;
+    user-select: none;
+  }
+
+  code, pre, kbd, samp {
+    font-family: 'Cascadia Code', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
   }
 }
 
-/* Glassmorphism & Surface Elevation */
+/* Glassmorphism & Native Desktop Surface Elevation */
 .studio-card {
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dark .studio-card {
-  background-color: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(51, 65, 85, 0.7);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.6);
+  background-color: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(51, 65, 85, 0.75);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.65), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
 }
 
 html:not(.dark) .studio-card {
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(203, 213, 225, 0.95);
-  box-shadow: 0 4px 20px -2px rgba(100, 116, 139, 0.15), 0 2px 6px -1px rgba(100, 116, 139, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(100, 116, 139, 0.16), 0 2px 6px -1px rgba(100, 116, 139, 0.08);
 }
 
 /* PCB Schematic Grid Substrate */
 .pcb-substrate {
   position: relative;
-  background-size: 24px 24px;
+  background-size: 20px 20px;
 }
 
 .dark .pcb-substrate {
   background-color: #0b1120;
   background-image: 
-    linear-gradient(to right, rgba(30, 41, 59, 0.5) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(30, 41, 59, 0.5) 1px, transparent 1px);
+    linear-gradient(to right, rgba(30, 41, 59, 0.45) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30, 41, 59, 0.45) 1px, transparent 1px);
 }
 
 html:not(.dark) .pcb-substrate {
   background-color: #f1f5f9;
   background-image: 
-    linear-gradient(to right, rgba(203, 213, 225, 0.85) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(203, 213, 225, 0.85) 1px, transparent 1px);
+    linear-gradient(to right, rgba(203, 213, 225, 0.8) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(203, 213, 225, 0.8) 1px, transparent 1px);
 }
 
 /* Tactile 3D Chip Appearance */
 .tactile-chip {
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dark .tactile-chip {
@@ -57,7 +66,7 @@ html:not(.dark) .pcb-substrate {
 }
 
 html:not(.dark) .tactile-chip {
-  box-shadow: 0 3px 10px rgba(100, 116, 139, 0.2), 0 1px 3px rgba(100, 116, 139, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  box-shadow: 0 3px 10px rgba(100, 116, 139, 0.18), 0 1px 3px rgba(100, 116, 139, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 /* Animated PCB Signal Traces */
@@ -77,10 +86,10 @@ html:not(.dark) .tactile-chip {
   animation: signalFlow 0.9s linear infinite;
 }
 
-/* Custom Scrollbars */
+/* Custom Ultra-Thin Sleek Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -92,7 +101,15 @@ html:not(.dark) .tactile-chip {
   border-radius: 9999px;
 }
 
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #0ea5e9;
+}
+
 html:not(.dark) ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 9999px;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background: #0284c7;
 }
