@@ -4,298 +4,379 @@
 
 @layer base {
   html, body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Display', 'Segoe UI', 'Inter', system-ui, sans-serif;
+    font-family: var(--font-interface);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     overscroll-behavior-x: none;
     user-select: text;
-    transition: background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1), color 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  code, pre, kbd, samp {
-    font-family: 'Cascadia Code', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-  }
+  code, pre, kbd, samp { font-family: var(--font-data); }
 }
 
-/* ==========================================================================
-   THEME DESIGN TOKENS (Arctic, Latte, Matcha, Sakura, Slate)
-   ========================================================================== */
-
-/* 1. Theme Arctic (Cleanroom Icy Blue) - Default */
-:root, html.theme-arctic {
-  --app-bg: #f1f5f9;
-  --card-bg: rgba(255, 255, 255, 0.94);
-  --card-border: rgba(203, 213, 225, 0.95);
-  --card-shadow: 0 4px 20px -2px rgba(100, 116, 139, 0.12), 0 1px 3px 0 rgba(100, 116, 139, 0.06);
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --text-sub: #334155;
-  --chip-bg: #f8fafc;
-  --chip-border: #e2e8f0;
-  --primary-accent: #0284c7;
-  --primary-accent-hover: #0369a1;
-  --primary-glow: rgba(2, 132, 199, 0.25);
-  --primary-badge-bg: #e0f2fe;
-  --primary-badge-text: #0369a1;
-  --primary-badge-border: #bae6fd;
-  --secondary-accent: #4f46e5;
-  --secondary-badge-bg: #e0e7ff;
-  --secondary-badge-text: #3730a3;
-  --secondary-badge-border: #c7d2fe;
-  --header-btn-grad: linear-gradient(135deg, #0284c7, #4f46e5);
-  --pcb-bg: #f8fafc;
-  --pcb-grid: rgba(203, 213, 225, 0.8);
-  --socket-bg: rgba(224, 242, 254, 0.85);
-  --socket-border: #38bdf8;
-  --socket-tag: #0284c7;
+:root, html.theme-obsidian {
+  color-scheme: dark;
+  --theme-identity: obsidian;
+  --font-interface: "Inter Variable", Inter, "Segoe UI Variable", sans-serif;
+  --font-data: "JetBrains Mono Variable", "Cascadia Code", Consolas, monospace;
+  --app-bg: #05080f;
+  --app-pattern: radial-gradient(circle at 12% -8%, rgba(24, 200, 255, 0.16), transparent 31rem), radial-gradient(circle at 88% 4%, rgba(163, 230, 53, 0.08), transparent 25rem), linear-gradient(rgba(76, 102, 132, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(76, 102, 132, 0.07) 1px, transparent 1px);
+  --app-pattern-size: auto, auto, 32px 32px, 32px 32px;
+  --card-solid: #0f1724;
+  --card-bg: rgba(15, 23, 36, 0.91);
+  --card-border: #34485d;
+  --card-shadow: 0 22px 60px -38px rgba(0, 0, 0, 0.95), inset 0 1px rgba(255, 255, 255, 0.045);
+  --surface-raised: #152235;
+  --overlay-panel-bg: #0e1725;
+  --overlay-backdrop: rgba(1, 5, 12, 0.82);
+  --text-main: #f4f8ff;
+  --text-muted: #a9b7c8;
+  --text-sub: #d2deeb;
+  --chip-bg: #111d2a;
+  --chip-border: #60758c;
+  --primary-accent: #22c7f2;
+  --primary-accent-hover: #66dcff;
+  --button-text: #03131a;
+  --primary-glow: rgba(34, 199, 242, 0.27);
+  --primary-badge-bg: #103a49;
+  --primary-badge-text: #9ceaff;
+  --primary-badge-border: #287993;
+  --secondary-accent: #a3e635;
+  --secondary-badge-bg: #243914;
+  --secondary-badge-text: #d9ffa3;
+  --secondary-badge-border: #638a31;
+  --header-btn-grad: linear-gradient(135deg, #22c7f2, #8fdc39);
+  --pcb-bg: #080f19;
+  --pcb-grid: rgba(65, 96, 124, 0.25);
+  --socket-bg: #102d3a;
+  --socket-border: #22c7f2;
+  --trace-copper: #294157;
+  --trace-primary: #22c7f2;
+  --trace-secondary: #a3e635;
+  --trace-via: #f6c453;
+  --trace-label-bg: #08111d;
+  --trace-label-border: #48647c;
+  --radius-card: 18px;
+  --radius-control: 11px;
+  --control-shadow: 0 8px 24px -16px rgba(34, 199, 242, 0.65);
 }
 
-/* 2. Theme Latte (Warm Mac 1984 & Coffee Caramel) */
-html.theme-latte {
-  --app-bg: #f5eee4;
-  --card-bg: rgba(255, 253, 248, 0.97);
-  --card-border: rgba(224, 211, 194, 0.95);
-  --card-shadow: 0 4px 20px -2px rgba(120, 95, 75, 0.14), 0 1px 3px 0 rgba(120, 95, 75, 0.08);
-  --text-main: #332219;
-  --text-muted: #785f4b;
-  --text-sub: #543d30;
-  --chip-bg: #faf4eb;
-  --chip-border: #dfd1be;
-  --primary-accent: #c2410c;
-  --primary-accent-hover: #9a3412;
-  --primary-glow: rgba(194, 65, 12, 0.25);
-  --primary-badge-bg: #ffedd5;
-  --primary-badge-text: #9a3412;
-  --primary-badge-border: #fed7aa;
-  --secondary-accent: #b45309;
-  --secondary-badge-bg: #fef3c7;
-  --secondary-badge-text: #92400e;
-  --secondary-badge-border: #fde68a;
-  --header-btn-grad: linear-gradient(135deg, #ea580c, #b45309);
-  --pcb-bg: #ede2d3;
-  --pcb-grid: rgba(214, 197, 177, 0.8);
-  --socket-bg: rgba(255, 237, 213, 0.85);
-  --socket-border: #fb923c;
-  --socket-tag: #ea580c;
+html.theme-blueprint {
+  color-scheme: light;
+  --theme-identity: blueprint;
+  --font-interface: "Inter Variable", Inter, "Segoe UI Variable", sans-serif;
+  --font-data: "JetBrains Mono Variable", "Cascadia Code", Consolas, monospace;
+  --app-bg: #0a4ca5;
+  --app-pattern: linear-gradient(rgba(187, 224, 255, 0.14) 1px, transparent 1px), linear-gradient(90deg, rgba(187, 224, 255, 0.14) 1px, transparent 1px), linear-gradient(rgba(187, 224, 255, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(187, 224, 255, 0.06) 1px, transparent 1px);
+  --app-pattern-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+  --card-solid: #f7fbff;
+  --card-bg: rgba(247, 251, 255, 0.96);
+  --card-border: #8cb5dc;
+  --card-shadow: 8px 8px 0 rgba(3, 43, 102, 0.3);
+  --surface-raised: #eaf5ff;
+  --overlay-panel-bg: #f7fbff;
+  --overlay-backdrop: rgba(4, 31, 71, 0.7);
+  --text-main: #102b4e;
+  --text-muted: #435f7d;
+  --text-sub: #23496f;
+  --chip-bg: #e4f0fb;
+  --chip-border: #557ca3;
+  --primary-accent: #075cac;
+  --primary-accent-hover: #034b91;
+  --button-text: #ffffff;
+  --primary-glow: rgba(7, 92, 172, 0.2);
+  --primary-badge-bg: #d7edff;
+  --primary-badge-text: #064b8e;
+  --primary-badge-border: #5b99cf;
+  --secondary-accent: #07687b;
+  --secondary-badge-bg: #d3f3f7;
+  --secondary-badge-text: #075264;
+  --secondary-badge-border: #55a3af;
+  --header-btn-grad: linear-gradient(135deg, #075cac, #06778b);
+  --pcb-bg: #e8f5ff;
+  --pcb-grid: rgba(10, 76, 165, 0.2);
+  --socket-bg: #d7edff;
+  --socket-border: #075cac;
+  --trace-copper: #83a7ca;
+  --trace-primary: #075cac;
+  --trace-secondary: #07687b;
+  --trace-via: #b54708;
+  --trace-label-bg: #f7fbff;
+  --trace-label-border: #648cb3;
+  --radius-card: 8px;
+  --radius-control: 5px;
+  --control-shadow: 3px 3px 0 rgba(5, 55, 119, 0.24);
 }
 
-/* 3. Theme Matcha (Zen Herbal Emerald) */
-html.theme-matcha {
-  --app-bg: #eaf2ed;
-  --card-bg: rgba(255, 255, 255, 0.97);
-  --card-border: rgba(193, 217, 203, 0.95);
-  --card-shadow: 0 4px 20px -2px rgba(45, 95, 70, 0.12), 0 1px 3px 0 rgba(45, 95, 70, 0.06);
-  --text-main: #132b20;
-  --text-muted: #527563;
-  --text-sub: #2d4f3e;
-  --chip-bg: #f2f8f4;
-  --chip-border: #cde2d6;
-  --primary-accent: #059669;
-  --primary-accent-hover: #047857;
-  --primary-glow: rgba(5, 150, 105, 0.25);
-  --primary-badge-bg: #d1fae5;
-  --primary-badge-text: #065f46;
-  --primary-badge-border: #a7f3d0;
-  --secondary-accent: #0d9488;
-  --secondary-badge-bg: #ccfbf1;
-  --secondary-badge-text: #115e59;
-  --secondary-badge-border: #99f6e4;
-  --header-btn-grad: linear-gradient(135deg, #059669, #0d9488);
-  --pcb-bg: #dfede4;
-  --pcb-grid: rgba(184, 215, 196, 0.8);
-  --socket-bg: rgba(209, 250, 229, 0.85);
-  --socket-border: #34d399;
-  --socket-tag: #059669;
+html.theme-terminal {
+  color-scheme: dark;
+  --theme-identity: terminal;
+  --font-interface: "JetBrains Mono Variable", "Cascadia Code", Consolas, monospace;
+  --font-data: "JetBrains Mono Variable", "Cascadia Code", Consolas, monospace;
+  --app-bg: #020805;
+  --app-pattern: repeating-linear-gradient(0deg, rgba(105, 240, 163, 0.035) 0, rgba(105, 240, 163, 0.035) 1px, transparent 1px, transparent 4px);
+  --app-pattern-size: auto;
+  --card-solid: #07130b;
+  --card-bg: rgba(7, 19, 11, 0.97);
+  --card-border: #386c49;
+  --card-shadow: 0 0 0 1px rgba(105, 240, 163, 0.06), 0 0 28px -18px rgba(105, 240, 163, 0.55);
+  --surface-raised: #0c2113;
+  --overlay-panel-bg: #07130b;
+  --overlay-backdrop: rgba(0, 5, 2, 0.88);
+  --text-main: #dcffe8;
+  --text-muted: #8fc9a5;
+  --text-sub: #b7ebc9;
+  --chip-bg: #0b1e10;
+  --chip-border: #4c8560;
+  --primary-accent: #69f0a3;
+  --primary-accent-hover: #9affc3;
+  --button-text: #04130a;
+  --primary-glow: rgba(105, 240, 163, 0.2);
+  --primary-badge-bg: #10351e;
+  --primary-badge-text: #a6ffc7;
+  --primary-badge-border: #3e895a;
+  --secondary-accent: #f5b942;
+  --secondary-badge-bg: #392907;
+  --secondary-badge-text: #ffda7d;
+  --secondary-badge-border: #8d6a1e;
+  --header-btn-grad: linear-gradient(90deg, #69f0a3, #e7ad3e);
+  --pcb-bg: #030d07;
+  --pcb-grid: rgba(105, 240, 163, 0.13);
+  --socket-bg: #0d2b17;
+  --socket-border: #69f0a3;
+  --trace-copper: #244d31;
+  --trace-primary: #69f0a3;
+  --trace-secondary: #f5b942;
+  --trace-via: #f5b942;
+  --trace-label-bg: #041008;
+  --trace-label-border: #4c8560;
+  --radius-card: 2px;
+  --radius-control: 2px;
+  --control-shadow: 0 0 15px -8px rgba(105, 240, 163, 0.8);
 }
 
-/* 4. Theme Sakura (Pastel Pink Blossom) */
-html.theme-sakura {
-  --app-bg: #f9eff6;
-  --card-bg: rgba(255, 255, 255, 0.97);
-  --card-border: rgba(237, 207, 228, 0.95);
-  --card-shadow: 0 4px 20px -2px rgba(160, 70, 130, 0.12), 0 1px 3px 0 rgba(160, 70, 130, 0.06);
-  --text-main: #33152c;
-  --text-muted: #7d4d72;
-  --text-sub: #54274c;
-  --chip-bg: #fcf4fa;
-  --chip-border: #f1d4e9;
-  --primary-accent: #e11d48;
-  --primary-accent-hover: #be123c;
-  --primary-glow: rgba(225, 29, 72, 0.25);
-  --primary-badge-bg: #ffe4e6;
-  --primary-badge-text: #9f1239;
-  --primary-badge-border: #fecdd3;
-  --secondary-accent: #9333ea;
-  --secondary-badge-bg: #f3e8ff;
-  --secondary-badge-text: #6b21a8;
-  --secondary-badge-border: #e9d5ff;
-  --header-btn-grad: linear-gradient(135deg, #e11d48, #9333ea);
-  --pcb-bg: #f2dfea;
-  --pcb-grid: rgba(229, 196, 222, 0.8);
-  --socket-bg: rgba(255, 228, 230, 0.85);
-  --socket-border: #fb7185;
-  --socket-tag: #e11d48;
+html.theme-industrial {
+  color-scheme: light;
+  --theme-identity: industrial;
+  --font-interface: "Inter Variable", Inter, "Segoe UI Variable", sans-serif;
+  --font-data: "JetBrains Mono Variable", "Cascadia Code", Consolas, monospace;
+  --app-bg: #d6d0c2;
+  --app-pattern: radial-gradient(circle at 1px 1px, rgba(38, 41, 35, 0.14) 1px, transparent 1.2px), linear-gradient(120deg, rgba(255, 255, 255, 0.16), transparent 45%);
+  --app-pattern-size: 18px 18px, auto;
+  --card-solid: #f4efe4;
+  --card-bg: rgba(244, 239, 228, 0.98);
+  --card-border: #6f7066;
+  --card-shadow: 5px 5px 0 #494b45;
+  --surface-raised: #e1dbce;
+  --overlay-panel-bg: #f4efe4;
+  --overlay-backdrop: rgba(35, 37, 32, 0.72);
+  --text-main: #22251f;
+  --text-muted: #5b5f53;
+  --text-sub: #3c4037;
+  --chip-bg: #e4ddcf;
+  --chip-border: #73746a;
+  --primary-accent: #a83f00;
+  --primary-accent-hover: #843100;
+  --button-text: #ffffff;
+  --primary-glow: rgba(168, 63, 0, 0.2);
+  --primary-badge-bg: #f7d2b5;
+  --primary-badge-text: #7b2b00;
+  --primary-badge-border: #ad5a27;
+  --secondary-accent: #365e55;
+  --secondary-badge-bg: #d3e3dc;
+  --secondary-badge-text: #244b43;
+  --secondary-badge-border: #5f8178;
+  --header-btn-grad: linear-gradient(135deg, #a83f00 0 72%, #2e332c 72%);
+  --pcb-bg: #ddd5c5;
+  --pcb-grid: rgba(58, 61, 53, 0.17);
+  --socket-bg: #f4c99f;
+  --socket-border: #8e3500;
+  --trace-copper: #8e8b7d;
+  --trace-primary: #a83f00;
+  --trace-secondary: #365e55;
+  --trace-via: #8a5400;
+  --trace-label-bg: #f4efe4;
+  --trace-label-border: #74766c;
+  --radius-card: 7px;
+  --radius-control: 4px;
+  --control-shadow: 3px 3px 0 rgba(46, 51, 44, 0.4);
 }
 
-/* 5. Theme Slate (Dark Cyber Obsidian) */
-html.theme-slate, html.dark {
-  --app-bg: #0b1120;
-  --card-bg: rgba(15, 23, 42, 0.88);
-  --card-border: rgba(51, 65, 85, 0.75);
-  --card-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.65), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-sub: #cbd5e1;
-  --chip-bg: #0f172a;
-  --chip-border: #1e293b;
-  --primary-accent: #0ea5e9;
-  --primary-accent-hover: #38bdf8;
-  --primary-glow: rgba(14, 165, 233, 0.3);
-  --primary-badge-bg: rgba(12, 74, 110, 0.45);
-  --primary-badge-text: #7dd3fc;
-  --primary-badge-border: rgba(56, 189, 248, 0.4);
-  --secondary-accent: #6366f1;
-  --secondary-badge-bg: rgba(49, 46, 129, 0.45);
-  --secondary-badge-text: #a5b4fc;
-  --secondary-badge-border: rgba(129, 140, 248, 0.4);
-  --header-btn-grad: linear-gradient(135deg, #0ea5e9, #6366f1);
-  --pcb-bg: #070d19;
-  --pcb-grid: rgba(30, 41, 59, 0.45);
-  --socket-bg: rgba(12, 74, 110, 0.5);
-  --socket-border: #0ea5e9;
-  --socket-tag: #0284c7;
+html.theme-tokyo {
+  color-scheme: dark;
+  --theme-identity: tokyo;
+  --font-interface: "Inter Variable", Inter, "Segoe UI Variable", sans-serif;
+  --font-data: "JetBrains Mono Variable", "Cascadia Code", Consolas, monospace;
+  --app-bg: #090d1d;
+  --app-pattern: radial-gradient(circle at 18% 0%, rgba(255, 77, 184, 0.18), transparent 28rem), radial-gradient(circle at 86% 8%, rgba(91, 132, 222, 0.17), transparent 32rem), linear-gradient(120deg, transparent 0 48%, rgba(255, 77, 184, 0.035) 48% 49%, transparent 49% 100%);
+  --app-pattern-size: auto, auto, 72px 72px;
+  --card-solid: #151a32;
+  --card-bg: rgba(21, 26, 50, 0.92);
+  --card-border: #4f5d8c;
+  --card-shadow: 0 20px 55px -36px rgba(0, 0, 0, 0.95), -2px 0 0 rgba(255, 77, 184, 0.18);
+  --surface-raised: #1d2547;
+  --overlay-panel-bg: #141a33;
+  --overlay-backdrop: rgba(4, 6, 18, 0.83);
+  --text-main: #f5f4ff;
+  --text-muted: #acb5d6;
+  --text-sub: #d8dcf4;
+  --chip-bg: #1d2547;
+  --chip-border: #6675a4;
+  --primary-accent: #c92883;
+  --primary-accent-hover: #ec4da3;
+  --button-text: #ffffff;
+  --primary-glow: rgba(255, 77, 184, 0.26);
+  --primary-badge-bg: #4a183c;
+  --primary-badge-text: #ff9bd5;
+  --primary-badge-border: #923069;
+  --secondary-accent: #86a8ff;
+  --secondary-badge-bg: #253669;
+  --secondary-badge-text: #b9ccff;
+  --secondary-badge-border: #536fae;
+  --header-btn-grad: linear-gradient(120deg, #c92883, #5b84de);
+  --pcb-bg: #0e1329;
+  --pcb-grid: rgba(122, 162, 247, 0.14);
+  --socket-bg: #32172e;
+  --socket-border: #ff4db8;
+  --trace-copper: #354266;
+  --trace-primary: #ff4db8;
+  --trace-secondary: #86a8ff;
+  --trace-via: #ff776d;
+  --trace-label-bg: #10152c;
+  --trace-label-border: #596c9d;
+  --radius-card: 15px;
+  --radius-control: 8px;
+  --control-shadow: 0 10px 24px -15px rgba(255, 77, 184, 0.8);
 }
 
-/* Background Application */
 body {
   background-color: var(--app-bg);
+  background-image: var(--app-pattern);
+  background-size: var(--app-pattern-size);
+  background-attachment: fixed;
   color: var(--text-main);
 }
 
-button,
-select,
-[role='button'] {
-  user-select: none;
-}
+.font-sans { font-family: var(--font-interface); }
+.font-mono { font-family: var(--font-data); font-variant-numeric: tabular-nums slashed-zero; }
 
-:where(.text-\[9px\], .text-\[10px\], .text-\[11px\]) {
-  font-size: 0.75rem;
-}
+button, select, [role="button"] { user-select: none; }
+html select, html input, html textarea { color: var(--text-main); }
+html select option { background: var(--card-solid); color: var(--text-main); }
 
-:where(button, select, input, textarea, a, [tabindex]):focus-visible {
-  outline: 2px solid var(--primary-accent);
-  outline-offset: 3px;
-}
+:where(.text-\[9px\], .text-\[10px\], .text-\[11px\]) { font-size: 0.75rem; }
+:where(button, select, input, textarea, a, [tabindex]):focus-visible { outline: 2px solid var(--primary-accent); outline-offset: 3px; }
+::selection { color: var(--button-text); background: var(--primary-accent); }
 
-/* Reusable Theme Classes */
 .studio-card {
-  background-color: var(--card-bg);
+  position: relative;
+  background: var(--card-bg);
   border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
   box-shadow: var(--card-shadow);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.theme-title {
-  color: var(--text-main);
-}
-
-.theme-sub {
-  color: var(--text-sub);
-}
-
-.theme-muted {
-  color: var(--text-muted);
-}
-
-.theme-primary-text {
-  color: var(--primary-accent);
-}
-
-.theme-secondary-text {
-  color: var(--secondary-accent);
-}
+.theme-title { color: var(--text-main); }
+.theme-sub { color: var(--text-sub); }
+.theme-muted { color: var(--text-muted); }
+.theme-primary-text { color: var(--primary-accent); }
+.theme-secondary-text { color: var(--secondary-accent); }
 
 .theme-btn-primary {
-  background-color: var(--primary-accent);
-  color: #ffffff;
-  box-shadow: 0 4px 12px var(--primary-glow);
-  transition: all 0.15s ease;
+  color: var(--button-text);
+  background: var(--primary-accent);
+  border: 1px solid color-mix(in srgb, var(--primary-accent), var(--text-main) 18%);
+  border-radius: var(--radius-control);
+  box-shadow: var(--control-shadow);
+  transition: transform 0.15s ease, background-color 0.15s ease;
 }
-.theme-btn-primary:hover {
-  background-color: var(--primary-accent-hover);
-}
+.theme-btn-primary:hover { background: var(--primary-accent-hover); transform: translateY(-1px); }
 
 .theme-btn-grad {
+  color: var(--button-text);
   background: var(--header-btn-grad);
-  color: #ffffff;
-  box-shadow: 0 4px 14px var(--primary-glow);
-  transition: all 0.15s ease;
+  border-radius: var(--radius-control);
+  box-shadow: var(--control-shadow);
+  transition: transform 0.15s ease, filter 0.15s ease;
 }
+.theme-btn-grad:hover { filter: brightness(1.06); transform: translateY(-1px); }
 
-.theme-badge-primary {
-  background-color: var(--primary-badge-bg);
-  color: var(--primary-badge-text);
-  border: 1px solid var(--primary-badge-border);
-}
+.theme-badge-primary { color: var(--primary-badge-text); background: var(--primary-badge-bg); border: 1px solid var(--primary-badge-border); }
+.theme-badge-secondary { color: var(--secondary-badge-text); background: var(--secondary-badge-bg); border: 1px solid var(--secondary-badge-border); }
+.theme-chip-box { color: var(--text-main); background: var(--chip-bg); border: 1px solid var(--chip-border); border-radius: var(--radius-control); }
+.theme-socket-box { background: var(--socket-bg); border: 2px solid var(--socket-border); border-radius: var(--radius-control); }
 
-.theme-badge-secondary {
-  background-color: var(--secondary-badge-bg);
-  color: var(--secondary-badge-text);
-  border: 1px solid var(--secondary-badge-border);
-}
-
-.theme-chip-box {
-  background-color: var(--chip-bg);
+.theme-option-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3.4rem;
+  padding: 0.6rem 0.7rem;
+  color: var(--text-main);
+  background: var(--chip-bg);
   border: 1px solid var(--chip-border);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  box-shadow: 0 5px 16px -14px rgba(0, 0, 0, 0.8);
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
 }
-
-.theme-socket-box {
-  background-color: var(--socket-bg);
-  border: 2px solid var(--socket-border);
-}
+.theme-option-card:hover { border-color: var(--primary-accent); background: var(--surface-raised); }
+.theme-option-card:focus-within { outline: 2px solid var(--primary-accent); outline-offset: 2px; }
+.theme-option-card.is-selected { border-color: var(--primary-accent); background: color-mix(in srgb, var(--surface-raised), var(--primary-accent) 10%); box-shadow: inset 3px 0 var(--primary-accent), var(--control-shadow); }
 
 .pcb-substrate {
   position: relative;
   background-color: var(--pcb-bg);
-  background-image: 
-    linear-gradient(to right, var(--pcb-grid) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--pcb-grid) 1px, transparent 1px);
+  background-image: linear-gradient(to right, var(--pcb-grid) 1px, transparent 1px), linear-gradient(to bottom, var(--pcb-grid) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
-/* Tactile 3D Chip Appearance */
-.tactile-chip {
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 8px rgba(100, 116, 139, 0.12), 0 1px 2px rgba(100, 116, 139, 0.06);
-}
-.dark .tactile-chip, html.theme-slate .tactile-chip {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+.tactile-chip { box-shadow: 0 3px 10px -7px rgba(0, 0, 0, 0.8), inset 0 1px rgba(255, 255, 255, 0.05); transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease; }
+.tactile-chip:hover { transform: translateY(-1px); }
+
+html.theme-blueprint .studio-card { border-width: 2px; }
+html.theme-blueprint .studio-card::before,
+html.theme-industrial .studio-card::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid color-mix(in srgb, var(--card-border), transparent 72%);
+  border-radius: calc(var(--radius-card) - 3px);
+  pointer-events: none;
 }
 
-/* Animated PCB Signal Traces */
-@keyframes signalFlow {
-  to {
-    stroke-dashoffset: -40;
-  }
+html.theme-terminal .studio-card,
+html.theme-terminal .theme-chip-box,
+html.theme-terminal .theme-option-card { letter-spacing: 0.005em; }
+
+html.theme-terminal .studio-card::after {
+  content: "SYS//READY";
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  color: var(--primary-accent);
+  font: 600 8px/1 var(--font-data);
+  opacity: 0.38;
+  pointer-events: none;
 }
 
-.trace-bus {
-  stroke-dasharray: 4, 6;
-  animation: signalFlow 1.8s linear infinite;
-}
+html.theme-industrial .theme-btn-primary,
+html.theme-industrial .theme-btn-grad,
+html.theme-industrial .theme-option-card.is-selected { box-shadow: 3px 3px 0 #383b35; }
+html.theme-tokyo .studio-card { border-left-color: var(--primary-accent); }
 
-.trace-bus-fast {
-  stroke-dasharray: 6, 8;
-  animation: signalFlow 0.9s linear infinite;
-}
+@keyframes signalFlow { to { stroke-dashoffset: -40; } }
+.trace-bus { stroke-dasharray: 4, 6; animation: signalFlow 1.8s linear infinite; }
+.trace-bus-fast { stroke-dasharray: 6, 8; animation: signalFlow 0.9s linear infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
@@ -303,21 +384,7 @@ select,
   }
 }
 
-/* Custom Ultra-Thin Sleek Scrollbars */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--card-border);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-accent);
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary-accent); }

@@ -24,6 +24,7 @@ test('switches through all five themes from settings', async ({ page }) => {
     await page.keyboard.press('Space')
     await expect(page.locator('html')).toHaveClass(new RegExp(`theme-${theme}`))
     await expect(radio).toBeChecked()
+    await expect.poll(() => page.locator('html').evaluate((element) => getComputedStyle(element).getPropertyValue('--theme-identity').trim())).toBe(theme)
     await expect.poll(() => page.evaluate(() => localStorage.getItem('aerospec_theme'))).toBe(theme)
 
     await page.reload()
@@ -33,7 +34,7 @@ test('switches through all five themes from settings', async ({ page }) => {
   }
 })
 
-test('captures dashboard theme baselines', async ({ page }) => {
+test('captures dashboard theme baselines', async ({ page }, testInfo) => {
   await page.locator('select[aria-label="Hardware profile"]').selectOption('full')
   await expect(page.getByText('Simulation', { exact: true })).toBeVisible()
   await expect(page).toHaveScreenshot('dashboard-obsidian.png', { animations: 'disabled' })
@@ -43,6 +44,76 @@ test('captures dashboard theme baselines', async ({ page }) => {
   await page.keyboard.press('Space')
   await page.getByRole('button', { name: 'Settings' }).click()
   await expect(page).toHaveScreenshot('dashboard-blueprint.png', { animations: 'disabled' })
+
+  if (testInfo.project.name === 'edge-1440') {
+    for (const [name, file] of [
+      ['Phosphor Terminal', 'dashboard-terminal.png'],
+      ['Industrial Amber', 'dashboard-industrial.png'],
+      ['Neo Tokyo', 'dashboard-tokyo.png'],
+    ] as const) {
+      await page.getByRole('button', { name: 'Settings' }).click()
+      await page.getByRole('radio', { name: new RegExp(name, 'i') }).focus()
+      await page.keyboard.press('Space')
+      await page.getByRole('button', { name: 'Settings' }).click()
+      await expect(page).toHaveScreenshot(file, { animations: 'disabled' })
+    }
+  }
+})
+
+test('maintains readable semantic contrast in every theme', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'edge-1440', 'Contrast audit uses one deterministic rendering project')
+
+  const themes = [
+    ['Obsidian Signal', 'obsidian'],
+    ['Blueprint Lab', 'blueprint'],
+    ['Phosphor Terminal', 'terminal'],
+    ['Industrial Amber', 'industrial'],
+    ['Neo Tokyo', 'tokyo'],
+  ] as const
+
+  for (const [name, id] of themes) {
+    await page.getByRole('button', { name: 'Settings' }).click()
+    await page.getByRole('radio', { name: new RegExp(name, 'i') }).focus()
+    await page.keyboard.press('Space')
+
+    const ratios = await page.locator('html').evaluate((element) => {
+      const style = getComputedStyle(element)
+      const rgb = (token: string) => {
+        const value = style.getPropertyValue(token).trim()
+        const match = /^#([0-9a-f]{6})$/i.exec(value)
+        if (!match) throw new Error(`${token} must resolve to an opaque six-digit hex color, received ${value}`)
+        const number = Number.parseInt(match[1], 16)
+        return [(number >> 16) & 255, (number >> 8) & 255, number & 255]
+      }
+      const luminance = ([red, green, blue]: number[]) => {
+        const channels = [red, green, blue].map((channel) => {
+          const value = channel / 255
+          return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+        })
+        return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+      }
+      const contrast = (foreground: string, background: string) => {
+        const first = luminance(rgb(foreground))
+        const second = luminance(rgb(background))
+        return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05)
+      }
+      return {
+        mainOnCard: contrast('--text-main', '--card-solid'),
+        mutedOnCard: contrast('--text-muted', '--card-solid'),
+        mainOnChip: contrast('--text-main', '--chip-bg'),
+        button: contrast('--button-text', '--primary-accent'),
+        chipBoundary: contrast('--chip-border', '--chip-bg'),
+      }
+    })
+
+    expect(ratios.mainOnCard, `${id} main/card`).toBeGreaterThanOrEqual(4.5)
+    expect(ratios.mutedOnCard, `${id} muted/card`).toBeGreaterThanOrEqual(4.5)
+    expect(ratios.mainOnChip, `${id} main/chip`).toBeGreaterThanOrEqual(4.5)
+    expect(ratios.button, `${id} button`).toBeGreaterThanOrEqual(4.5)
+    expect(ratios.chipBoundary, `${id} chip boundary`).toBeGreaterThanOrEqual(3)
+
+    await page.getByRole('button', { name: 'Settings' }).click()
+  }
 })
 
 test('captures and keyboard-checks AI, inspector, and Flex overlays', async ({ page }, testInfo) => {
