@@ -198,33 +198,33 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
       <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-4">
         {/* Backdrop */}
         <motion.div
-          ref={dialogRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="ai-advisor-title"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-slate-950/80 backdrop-blur-md cursor-pointer"
+          className="absolute inset-0 overlay-backdrop cursor-pointer"
         />
 
         {/* Modal Window */}
         <motion.div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ai-advisor-title"
           initial={{ scale: 0.94, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.94, opacity: 0 }}
-          className="relative z-10 w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[88vh]"
+          className="overlay-panel relative z-10 w-full max-w-4xl border overflow-hidden flex flex-col h-[88vh]"
         >
           {/* Header */}
-          <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+          <div className="overlay-section overlay-divider p-4 sm:p-5 border-b flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/25 shrink-0">
                 <Bot className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 id="ai-advisor-title" className="text-base font-extrabold text-white">
+                  <h3 id="ai-advisor-title" className="text-base font-extrabold theme-title">
                     {lang === 'EN' ? 'AeroSpec AI Hardware Upgrade Consultant' : 'Trợ Lý AI Tư Vấn Nâng Cấp Phần Cứng'}
                   </h3>
                   <span className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded-full border flex items-center gap-1 ${
@@ -236,7 +236,7 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
                     {apiKey ? 'Gemini 3.5 / 3.7 Active' : 'API Key Required'}
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                <p className="text-xs theme-muted font-mono mt-0.5">
                   {telemetry.telemetry.mode === 'simulated' ? 'Simulated profile' : 'Live hardware'} • {score.score === null ? 'Score unavailable' : `Score ${score.score}/100`}
                 </p>
               </div>
@@ -245,7 +245,7 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowKeyInput(!showKeyInput)}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-mono font-bold flex items-center gap-1.5 transition cursor-pointer"
+                className="overlay-control px-3 py-1.5 text-xs font-mono font-bold flex items-center gap-1.5 transition cursor-pointer"
                 title="Cài đặt Gemini API Key để trò chuyện với AI"
               >
                 <Key className="w-3.5 h-3.5 text-amber-400" />
@@ -255,7 +255,7 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
               <button
                 onClick={onClose}
                 aria-label={lang === 'EN' ? 'Close AI advisor' : 'Đóng trợ lý AI'}
-                className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition cursor-pointer"
+                className="overlay-icon-button w-9 h-9 flex items-center justify-center transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -264,8 +264,8 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
 
           {/* API Key Configuration Dropdown Panel */}
           {showKeyInput && (
-            <div className="p-4 bg-slate-950 border-b border-slate-800 flex flex-col gap-2">
-              <div className="flex items-center justify-between text-xs text-slate-300">
+            <div className="overlay-inset overlay-divider p-4 border-b flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs theme-sub">
                 <span className="font-bold flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-amber-400" /> Google Gemini API Key
                 </span>
@@ -278,7 +278,7 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
                   Lấy API Key miễn phí tại Google AI Studio →
                 </a>
               </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs theme-muted leading-relaxed">
                 {lang === 'EN'
                   ? 'Your key is stored locally in this app profile on this PC. It is sent only to the Google Gemini API when you ask a question.'
                   : 'Key được lưu cục bộ trong profile ứng dụng này trên máy của bạn. Key chỉ được gửi tới Google Gemini API khi bạn đặt câu hỏi.'}
@@ -290,7 +290,7 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
                   value={draftApiKey}
                   onChange={(e) => setDraftApiKey(e.target.value)}
                   placeholder="Dán mã API Key (AQ.Ab8... hoặc AIzaSy...)"
-                  className="flex-1 px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 font-mono"
+                  className="overlay-input flex-1 px-3.5 py-2 text-xs focus:outline-none font-mono"
                 />
                 <button
                   onClick={saveApiKey}
@@ -313,38 +313,38 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
           )}
 
           {/* Live Machine Specs Summary Bar */}
-          <div className="px-5 py-2 bg-slate-950/70 border-b border-slate-800/80 flex flex-wrap items-center justify-between text-xs font-mono text-slate-400 gap-2">
+          <div className="overlay-inset overlay-divider px-5 py-2 border-b flex flex-wrap items-center justify-between text-xs font-mono theme-muted gap-2">
             <div className="flex items-center gap-4">
-              {telemetry.telemetry.capabilities.cpuIdentity && <span className="flex items-center gap-1.5 text-slate-300">
+              {telemetry.telemetry.capabilities.cpuIdentity && <span className="flex items-center gap-1.5 theme-sub">
                 <Cpu className="w-3.5 h-3.5 text-sky-400" /> {telemetry.cpu.name}
               </span>}
-              {telemetry.telemetry.capabilities.psu && <span className="flex items-center gap-1.5 text-slate-300">
+              {telemetry.telemetry.capabilities.psu && <span className="flex items-center gap-1.5 theme-sub">
                 <Zap className="w-3.5 h-3.5 text-amber-400" /> PSU: {telemetry.psu.ratedWattage}W ({telemetry.psu.rating})
               </span>}
-              {telemetry.telemetry.capabilities.motherboardIdentity && <span className="flex items-center gap-1.5 text-slate-300">
+              {telemetry.telemetry.capabilities.motherboardIdentity && <span className="flex items-center gap-1.5 theme-sub">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Main: {telemetry.motherboard.name}
               </span>}
               {!telemetry.telemetry.capabilities.cpuIdentity && !telemetry.telemetry.capabilities.motherboardIdentity && (
                 <span className="text-amber-300">No native component identity available in browser preview</span>
               )}
             </div>
-            <span className="text-[11px] text-slate-500">
+            <span className="text-[11px] theme-muted">
               {telemetry.telemetry.mode === 'simulated' ? 'Simulated context' : 'Capability-filtered live context'}
             </span>
           </div>
 
           {/* Messages Stream Body */}
-          <div className="flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4 bg-slate-950/40">
+          <div className="overlay-canvas flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4">
             {messages.length === 0 && (
               <div className="m-auto w-full max-w-2xl text-center flex flex-col items-center gap-4 py-6">
                 <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 flex items-center justify-center">
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-base font-black text-white">
+                  <h4 className="text-base font-black theme-title">
                     {lang === 'EN' ? 'Ask with capability-filtered context' : 'Hỏi với ngữ cảnh đã lọc theo khả năng phát hiện'}
                   </h4>
-                  <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-lg">
+                  <p className="text-xs theme-muted leading-relaxed mt-1 max-w-lg">
                     {lang === 'EN'
                       ? 'AeroSpec sends only detected fields to Gemini and clearly marks simulator profiles.'
                       : 'AeroSpec chỉ gửi các trường đã phát hiện tới Gemini và luôn đánh dấu rõ profile giả lập.'}
@@ -356,7 +356,7 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
                       key={question}
                       type="button"
                       onClick={() => handleSendMessage(question)}
-                      className="p-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left text-xs text-slate-200 leading-relaxed cursor-pointer"
+                      className="overlay-control p-3 text-left text-xs leading-relaxed cursor-pointer"
                     >
                       {question}
                     </button>
@@ -380,11 +380,11 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
                 <div className={`p-4 rounded-2xl flex flex-col gap-2 ${
                   msg.sender === 'user'
                     ? 'bg-sky-600 text-white rounded-tr-none'
-                    : (msg.isError ? 'bg-amber-950/60 border border-amber-800 text-amber-200 rounded-tl-none' : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none shadow-lg')
+                    : (msg.isError ? 'bg-amber-950/60 border border-amber-800 text-amber-200 rounded-tl-none' : 'assistant-bubble rounded-tl-none shadow-lg')
                 }`}>
                   <MarkdownRenderer content={msg.text} />
 
-                  <span className={`text-[10px] font-mono mt-1 ${msg.sender === 'user' ? 'text-sky-200 text-right' : 'text-slate-500'}`}>
+                  <span className={`text-[10px] font-mono mt-1 ${msg.sender === 'user' ? 'text-sky-200 text-right' : 'theme-muted'}`}>
                     {msg.timestamp}
                   </span>
                 </div>
@@ -396,7 +396,7 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
                 <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
                   <Bot className="w-4 h-4" />
                 </div>
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 flex items-center gap-2">
+                <div className="overlay-control p-4 flex items-center gap-2">
                   <RefreshCw className="w-4 h-4 text-sky-400 animate-spin" />
                   <span className="text-xs font-mono">
                     Đang gửi dữ liệu phần cứng và nhận phản hồi từ Gemini AI...
@@ -409,15 +409,15 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
           </div>
 
           {/* Quick Prompt Chips */}
-          {messages.length > 0 && <div className="px-4 py-2.5 bg-slate-900/90 border-t border-slate-800 flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-mono text-slate-400 shrink-0 font-bold flex items-center gap-1">
+          {messages.length > 0 && <div className="overlay-section overlay-divider px-4 py-2.5 border-t flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-mono theme-muted shrink-0 font-bold flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-sky-400" /> Gợi ý:
             </span>
             {quickQuestions.slice(0, 3).map((q, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSendMessage(q)}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700 rounded-lg text-xs font-sans whitespace-normal transition cursor-pointer"
+                className="overlay-control px-3 py-1.5 text-xs font-sans whitespace-normal transition cursor-pointer"
               >
                 {q}
               </button>
@@ -425,14 +425,14 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
           </div>}
 
           {/* Chat Input Footer */}
-          <div className="p-4 bg-slate-900 border-t border-slate-800 flex items-center gap-3">
+          <div className="overlay-section overlay-divider p-4 border-t flex items-center gap-3">
             <input
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
               placeholder={lang === 'EN' ? 'Ask any hardware upgrade or compatibility question...' : 'Hỏi về ngân sách nâng cấp, tương thích card đồ họa, nguồn điện, RAM, SSD...'}
-              className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 font-sans"
+              className="overlay-input flex-1 px-4 py-2.5 text-xs focus:outline-none font-sans"
             />
 
             <button

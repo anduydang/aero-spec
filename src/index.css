@@ -330,6 +330,68 @@ html select option { background: var(--card-solid); color: var(--text-main); }
 .theme-option-card:focus-within { outline: 2px solid var(--primary-accent); outline-offset: 2px; }
 .theme-option-card.is-selected { border-color: var(--primary-accent); background: color-mix(in srgb, var(--surface-raised), var(--primary-accent) 10%); box-shadow: inset 3px 0 var(--primary-accent), var(--control-shadow); }
 
+.overlay-backdrop { background: var(--overlay-backdrop); backdrop-filter: blur(14px); }
+.overlay-panel {
+  color: var(--text-main);
+  background-color: var(--overlay-panel-bg);
+  border-color: var(--card-border);
+  border-radius: var(--radius-card);
+  box-shadow: 0 28px 90px -30px rgba(0, 0, 0, 0.75);
+}
+.overlay-section { color: var(--text-main); background: var(--card-bg); }
+.overlay-canvas { color: var(--text-main); background: color-mix(in srgb, var(--app-bg), var(--card-solid) 38%); }
+.overlay-inset { color: var(--text-main); background: var(--chip-bg); border-color: var(--chip-border); }
+.overlay-divider { border-color: var(--card-border); }
+.overlay-control {
+  color: var(--text-sub);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-control);
+}
+.overlay-control:hover { color: var(--text-main); background: var(--surface-raised); border-color: var(--primary-accent); }
+.overlay-icon-button {
+  color: var(--text-sub);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-control);
+}
+.overlay-icon-button:hover { color: var(--text-main); border-color: var(--primary-accent); }
+.overlay-input {
+  color: var(--text-main);
+  background: var(--app-bg);
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-control);
+}
+.overlay-input::placeholder { color: var(--text-muted); }
+.overlay-input:focus { border-color: var(--primary-accent); }
+.overlay-accent-card {
+  color: var(--text-main);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary-accent), transparent 88%), var(--chip-bg));
+  border: 1px solid color-mix(in srgb, var(--primary-accent), var(--chip-border) 55%);
+  border-radius: var(--radius-control);
+}
+.assistant-bubble { color: var(--text-main); background: var(--chip-bg); border: 1px solid var(--chip-border); }
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content strong,
+.markdown-content th { color: var(--text-main); }
+.markdown-content p,
+.markdown-content li,
+.markdown-content em,
+.markdown-content td { color: var(--text-sub); }
+.markdown-content table,
+.markdown-content thead,
+.markdown-content tbody,
+.markdown-content tr,
+.markdown-content hr { border-color: var(--chip-border); }
+.markdown-content thead,
+.markdown-content code { color: var(--primary-accent); background: var(--surface-raised); }
+.markdown-content tbody,
+.markdown-content pre { color: var(--text-sub); background: var(--app-bg); }
+.markdown-content blockquote { color: var(--text-muted); background: color-mix(in srgb, var(--primary-accent), transparent 92%); border-color: var(--primary-accent); }
+
 .pcb-substrate {
   position: relative;
   background-color: var(--pcb-bg);

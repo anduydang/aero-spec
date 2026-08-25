@@ -82,35 +82,35 @@ export const FlexCardModal: React.FC<FlexCardModalProps> = ({
       <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
         {/* Backdrop Blur Overlay */}
         <motion.div 
-          ref={dialogRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="flex-card-title"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-slate-950/80 backdrop-blur-md cursor-pointer"
+          className="absolute inset-0 overlay-backdrop cursor-pointer"
         />
 
         {/* Modal Container */}
         <motion.div 
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="flex-card-title"
           initial={{ scale: 0.92, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.92, opacity: 0 }}
-          className="relative z-10 w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
+          className="overlay-panel relative z-10 w-full max-w-3xl border overflow-hidden flex flex-col max-h-[92vh]"
         >
           {/* Modal Header */}
-          <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+          <div className="overlay-section overlay-divider p-4 sm:p-5 border-b flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center border border-sky-500/40">
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <h3 id="flex-card-title" className="text-base font-extrabold text-white">
+                <h3 id="flex-card-title" className="text-base font-extrabold theme-title">
                   {lang === 'EN' ? 'AeroSpec Holographic Flex Card' : 'Thẻ Flex Phần Cứng AeroSpec Pro'}
                 </h3>
-                <p className="text-xs text-slate-400 font-mono">
+                <p className="text-xs theme-muted font-mono">
                   {lang === 'EN' ? 'Preview & Export High-Resolution Rig Summary' : 'Xem trước & xuất ảnh thông số cấu hình độ phân giải cao'}
                 </p>
               </div>
@@ -119,14 +119,14 @@ export const FlexCardModal: React.FC<FlexCardModalProps> = ({
             <button 
               onClick={onClose}
               aria-label={lang === 'EN' ? 'Close Flex Card' : 'Đóng thẻ Flex'}
-              className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition cursor-pointer"
+              className="overlay-icon-button w-8 h-8 flex items-center justify-center transition cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Modal Body: The Rendered Flex Card Target */}
-          <div className="p-4 sm:p-6 overflow-y-auto flex items-center justify-center bg-slate-950/60">
+          <div className="overlay-canvas p-4 sm:p-6 overflow-y-auto flex items-center justify-center">
             
             {/* THIS IS THE CARD CONTAINER RASTERIZED TO PNG */}
             <div 
@@ -247,7 +247,7 @@ export const FlexCardModal: React.FC<FlexCardModalProps> = ({
           </div>
 
           {/* Modal Action Footer */}
-          <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-900/90 flex flex-wrap items-center justify-between gap-3">
+          <div className="overlay-section overlay-divider p-4 sm:p-5 border-t flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               {copySuccess && (
                 <span className="text-xs font-mono text-emerald-400 flex items-center gap-1">
@@ -260,7 +260,7 @@ export const FlexCardModal: React.FC<FlexCardModalProps> = ({
               <button 
                 onClick={handleCopyClipboard}
                 disabled={isExporting}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-white text-xs font-bold flex items-center gap-2 border border-slate-700 transition cursor-pointer disabled:opacity-50"
+                className="overlay-control px-4 py-2 text-xs font-bold flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
               >
                 <Copy className="w-3.5 h-3.5 text-sky-400" />
                 <span>{lang === 'EN' ? 'Copy Image' : 'Sao chép ảnh'}</span>

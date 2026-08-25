@@ -119,11 +119,29 @@ test('maintains readable semantic contrast in every theme', async ({ page }, tes
 test('captures and keyboard-checks AI, inspector, and Flex overlays', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'edge-1440', 'Overlay baselines use the review viewport')
   await page.locator('select[aria-label="Hardware profile"]').selectOption('full')
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await page.getByRole('radio', { name: /Blueprint Lab/i }).focus()
+  await page.keyboard.press('Space')
+  await page.getByRole('button', { name: 'Settings' }).click()
+
+  const expectSemanticPanel = async (dialog: ReturnType<typeof page.getByRole>) => {
+    await expect(dialog).toHaveClass(/overlay-panel/)
+    await expect.poll(() => dialog.evaluate((element) => {
+      const token = getComputedStyle(document.documentElement).getPropertyValue('--overlay-panel-bg').trim()
+      const probe = document.createElement('span')
+      probe.style.color = token
+      document.body.append(probe)
+      const resolvedToken = getComputedStyle(probe).color
+      probe.remove()
+      return getComputedStyle(element).backgroundColor === resolvedToken
+    })).toBe(true)
+  }
 
   const aiOpener = page.getByRole('button', { name: 'AI Advisor' })
   await aiOpener.click()
   const aiDialog = page.getByRole('dialog', { name: 'AeroSpec AI Hardware Upgrade Consultant' })
   await expect(aiDialog).toBeVisible()
+  await expectSemanticPanel(aiDialog)
   await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[role="dialog"]') !== null)).toBe(true)
   await page.keyboard.press('Shift+Tab')
   await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[role="dialog"]') !== null)).toBe(true)
@@ -135,6 +153,7 @@ test('captures and keyboard-checks AI, inspector, and Flex overlays', async ({ p
   await page.getByText('Processor Engine', { exact: true }).click()
   const inspector = page.getByRole('dialog', { name: /AMD Ryzen 7 7800X3D/ })
   await expect(inspector).toBeVisible()
+  await expectSemanticPanel(inspector)
   await expect(page).toHaveScreenshot('overlay-inspector.png', { animations: 'disabled' })
   await page.keyboard.press('Escape')
   await expect(inspector).toHaveCount(0)
@@ -143,6 +162,7 @@ test('captures and keyboard-checks AI, inspector, and Flex overlays', async ({ p
   await flexOpener.click()
   const flexDialog = page.getByRole('dialog', { name: 'AeroSpec Holographic Flex Card' })
   await expect(flexDialog).toBeVisible()
+  await expectSemanticPanel(flexDialog)
   await expect(page).toHaveScreenshot('overlay-flex.png', {
     animations: 'disabled',
   })
