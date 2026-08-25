@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Header } from './components/Header';
 import { SiliconMetrics } from './components/SiliconMetrics';
 import { MotherboardSchematic } from './components/MotherboardSchematic';
@@ -13,6 +13,7 @@ import { createLiveTelemetryBaseline, mergeNativeTelemetry } from './data/liveTe
 import { getDynamicInspectorItem } from './data/inspectorGenerator';
 import { i18nData } from './data/i18nData';
 import { soundFx } from './utils/soundFx';
+import { calculateHardwareSynergyScore } from './utils/scoreCalculator';
 
 export function App() {
   const [theme, setTheme] = useState<ThemeType>(() => (localStorage.getItem('aerospec_theme') as ThemeType) || 'arctic');
@@ -78,6 +79,10 @@ export function App() {
   }, [lang]);
 
   const telemetry = rigProfile === 'live' ? liveData : (rigProfile === 'full' ? fullRigTelemetry : missingRigTelemetry);
+  const hardwareScore = useMemo(
+    () => calculateHardwareSynergyScore(telemetry, persona),
+    [telemetry, persona],
+  );
   const dict = i18nData[lang];
   const currentInsight = dict.personas[rigProfile][persona];
   const activeInspectorItem = activeInspectorId ? getDynamicInspectorItem(activeInspectorId, telemetry, lang, persona) : null;
@@ -132,8 +137,7 @@ export function App() {
 
       {/* Bottom Full-Width Neural Hardware Copilot */}
       <CopilotFooter 
-        telemetry={telemetry}
-        persona={persona}
+        score={hardwareScore}
         copilotTitle={dict.copilotTitle}
         copilotDesc={dict.copilotDesc}
         synergyLabel={dict.synergyLabel}
@@ -162,6 +166,7 @@ export function App() {
         telemetry={telemetry}
         lang={lang}
         persona={persona}
+        score={hardwareScore}
         onClose={() => {
           soundFx.playClick();
           setIsFlexCardOpen(false);

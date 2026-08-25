@@ -94,13 +94,30 @@ export interface InspectorItem {
 }
 
 export interface PersonaInsight {
-  score: string;
   tag1: string;
   tag2: string;
   tag3: string;
   text1: string;
   text2: string;
   text3: string;
+}
+
+export type ScoreFactorId = 'cpu' | 'ram' | 'gpu' | 'storage';
+
+export interface ScoreFactor {
+  id: ScoreFactorId;
+  score: number | null;
+  weight: number;
+  available: boolean;
+  reason: string;
+}
+
+export interface HardwareScore {
+  score: number | null;
+  grade: 'S' | 'A' | 'B' | 'C' | 'D' | '—';
+  verdict: string;
+  confidence: 'high' | 'medium' | 'low';
+  factors: ScoreFactor[];
 }
 
 export interface HardwareTelemetryState {

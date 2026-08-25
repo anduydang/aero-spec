@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { X, Download, Copy, Check, Sparkles, Cpu, HardDrive, Layers, CircuitBoard, Monitor, ShieldCheck } from 'lucide-react';
 import { toPng, toBlob } from 'html-to-image';
-import type { HardwareTelemetryState, LanguageType, PersonaType } from '../types/hardware';
+import type { HardwareScore, HardwareTelemetryState, LanguageType, PersonaType } from '../types/hardware';
 import { i18nData } from '../data/i18nData';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -10,6 +10,7 @@ interface FlexCardModalProps {
   telemetry: HardwareTelemetryState;
   lang: LanguageType;
   persona: PersonaType;
+  score: HardwareScore;
   onClose: () => void;
 }
 
@@ -18,6 +19,7 @@ export const FlexCardModal: React.FC<FlexCardModalProps> = ({
   telemetry,
   lang,
   persona,
+  score,
   onClose
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -27,7 +29,7 @@ export const FlexCardModal: React.FC<FlexCardModalProps> = ({
   if (!isOpen) return null;
 
   const dict = i18nData[lang];
-  const rigKey = telemetry.isLiveDetected ? 'live' : (telemetry.ram.isSingleChannel ? 'missing' : 'full');
+  const rigKey = telemetry.telemetry.mode === 'live' ? 'live' : (telemetry.ram.isSingleChannel ? 'missing' : 'full');
   const insight = dict.personas[rigKey][persona];
 
   const handleDownloadPng = async () => {
@@ -151,7 +153,7 @@ export const FlexCardModal: React.FC<FlexCardModalProps> = ({
                 <div className="flex flex-col items-end">
                   <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider font-bold">Synergy Rating</span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black text-emerald-400">{insight.score}</span>
+                    <span data-testid="flex-score" className="text-2xl font-black text-emerald-400">{score.score ?? '—'}</span>
                     <span className="text-xs text-slate-500 font-mono">/ 100</span>
                   </div>
                 </div>

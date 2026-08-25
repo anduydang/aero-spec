@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { Sparkles, RefreshCw, CheckCircle2, ShieldCheck, Lightbulb } from 'lucide-react';
-import type { HardwareTelemetryState, PersonaInsight, PersonaType } from '../types/hardware';
-import { calculateHardwareSynergyScore } from '../utils/scoreCalculator';
+import { Sparkles, ChevronDown, CheckCircle2, ShieldCheck, Lightbulb } from 'lucide-react';
+import type { HardwareScore, PersonaInsight } from '../types/hardware';
 import { motion } from 'framer-motion';
 
 interface CopilotFooterProps {
-  telemetry: HardwareTelemetryState;
-  persona: PersonaType;
+  score: HardwareScore;
   copilotTitle: string;
   copilotDesc: string;
   synergyLabel: string;
@@ -18,8 +16,7 @@ interface CopilotFooterProps {
 }
 
 export const CopilotFooter: React.FC<CopilotFooterProps> = ({
-  telemetry,
-  persona,
+  score,
   copilotTitle,
   copilotDesc,
   synergyLabel,
@@ -29,15 +26,8 @@ export const CopilotFooter: React.FC<CopilotFooterProps> = ({
   pillar3Header,
   insight
 }) => {
-  const [isDiagnosing, setIsDiagnosing] = useState(false);
-  const calculated = calculateHardwareSynergyScore(telemetry, persona);
-
-  const handleRunDiagnosis = () => {
-    setIsDiagnosing(true);
-    setTimeout(() => {
-      setIsDiagnosing(false);
-    }, 600);
-  };
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const displayScore = score.score === null ? '—' : String(score.score);
 
   return (
     <footer className="studio-card rounded-2xl px-3.5 py-2.5 flex flex-col gap-2 shrink-0">
@@ -58,7 +48,7 @@ export const CopilotFooter: React.FC<CopilotFooterProps> = ({
               </span>
             </div>
             <p className="text-[11px] theme-muted font-medium leading-tight mt-0.5">
-              {copilotDesc} • {calculated.verdict}
+              {copilotDesc} • {score.verdict}
             </p>
           </div>
         </div>
@@ -68,28 +58,25 @@ export const CopilotFooter: React.FC<CopilotFooterProps> = ({
           <div className="flex items-baseline gap-2 theme-chip-box px-3 py-1 rounded-xl shadow-sm">
             <span className="text-[11px] theme-muted font-bold">{synergyLabel}</span>
             <span className={`text-base font-black font-mono ${
-              calculated.score >= 80 ? 'text-emerald-600 dark:text-emerald-400' : calculated.score >= 55 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'
+              score.score !== null && score.score >= 80 ? 'text-emerald-600 dark:text-emerald-400' : score.score !== null && score.score >= 55 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'
             }`}>
-              {isDiagnosing ? (
-                <span className="animate-pulse theme-primary-text text-xs">Evaluating...</span>
-              ) : (
-                `${calculated.score} / 100 [Grade ${calculated.grade}]`
-              )}
+              <span data-testid="footer-score">{displayScore} / 100 [Grade {score.grade}]</span>
             </span>
           </div>
 
           <button 
-            onClick={handleRunDiagnosis}
+            onClick={() => setIsDetailsOpen((open) => !open)}
+            aria-expanded={isDetailsOpen}
             className="px-3 py-1 rounded-xl theme-btn-primary text-white text-xs font-bold flex items-center gap-1.5 transition duration-150 cursor-pointer"
           >
-            <RefreshCw className={`w-3 h-3 ${isDiagnosing ? 'animate-spin' : ''}`} /> 
-            <span>{diagnosisBtn}</span>
+            <ChevronDown className={`w-3 h-3 transition-transform ${isDetailsOpen ? 'rotate-180' : ''}`} />
+            <span>{isDetailsOpen ? 'Thu gọn' : diagnosisBtn}</span>
           </button>
         </div>
       </div>
 
       {/* AI 3-Pillar Insights Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs">
+      {isDetailsOpen && <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs">
         
         {/* Pillar 1 */}
         <motion.div 
@@ -150,7 +137,7 @@ export const CopilotFooter: React.FC<CopilotFooterProps> = ({
           </p>
         </motion.div>
 
-      </div>
+      </div>}
 
     </footer>
   );

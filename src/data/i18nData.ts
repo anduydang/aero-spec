@@ -34,7 +34,7 @@ export const i18nData: Record<LanguageType, DictContent> = {
     copilotTitle: "Neural Hardware Copilot",
     copilotDesc: "In-depth analysis based on real hardware telemetry and user workload profiles",
     synergyLabel: "Build Synergy:",
-    diagnosisBtn: "Run AI Diagnosis",
+    diagnosisBtn: "View details",
     pillar1: "SYNERGY & SWEET SPOT",
     pillar2: "THERMAL & VRM HEADROOM",
     pillar3: "PERSONA RECOMMENDATION",
@@ -43,7 +43,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
     personas: {
       live: {
         dev: {
-          score: "82",
           tag1: "STABLE DUAL-CH",
           tag2: "COOL THERMAL",
           tag3: "GOOD FOR CODE",
@@ -52,7 +51,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "16GB RAM handles 4-6 Docker containers comfortably. Consider adding a dedicated SATA SSD for heavy container storage."
         },
         creator: {
-          score: "62",
           tag1: "iGPU ACTIVE",
           tag2: "QUICKSYNC READY",
           tag3: "CONSIDER dGPU",
@@ -61,7 +59,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "Adding a dedicated PCIe GPU (e.g. GTX 1660 / RTX 3050+) will dramatically accelerate 3D rendering and video export times."
         },
         esports: {
-          score: "70",
           tag1: "1080p 60FPS",
           tag2: "LOW LATENCY USB",
           tag3: "LIGHTWEIGHT ESPORTS",
@@ -70,7 +67,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "For 144Hz+ competitive gaming in CS2 or Apex, a dedicated graphics card is recommended."
         },
         silent: {
-          score: "92",
           tag1: "QUIET 42W",
           tag2: "LOW POWER",
           tag3: "OFFICE WORK",
@@ -81,7 +77,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
       },
       full: {
         dev: {
-          score: "97",
           tag1: "PASSED",
           tag2: "EXCELLENT",
           tag3: "OPTIMAL",
@@ -90,7 +85,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "For Fullstack Dev + Docker workloads, 32GB RAM handles 12+ active containers easily. Empty A1/B1 DIMM slots allow seamless upgrade to 64GB."
         },
         creator: {
-          score: "93",
           tag1: "OPTIMAL",
           tag2: "GREAT",
           tag3: "CONSIDER 64GB",
@@ -99,7 +93,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "Heavy Unreal Engine 5 or After Effects caching may push 32GB RAM close to 85% capacity. Upgrading to 64GB is recommended for large cinematic scenes."
         },
         esports: {
-          score: "99",
           tag1: "ENDGAME",
           tag2: "ZERO THROTTLE",
           tag3: "ULTRA LOW LATENCY",
@@ -108,7 +101,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "LG Nano-IPS 165Hz OC 180Hz with G-Sync Full Range provides flawless frame pacing at 300+ FPS with zero tearing."
         },
         silent: {
-          score: "96",
           tag1: "SUB-30dB",
           tag2: "STABLE THERMAL",
           tag3: "EFFICIENT Q4/Q8",
@@ -119,7 +111,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
       },
       missing: {
         dev: {
-          score: "74",
           tag1: "MEMORY BOTTLENECK",
           tag2: "iGPU FALLBACK",
           tag3: "UPGRADE RECOMMENDED",
@@ -128,7 +119,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "For Docker clusters, 16GB RAM will easily hit 90%+ saturation. Strongly recommend inserting a 2nd 16GB stick into Slot B2 to restore Dual-Channel 128-bit bus."
         },
         creator: {
-          score: "58",
           tag1: "NO ACCELERATION",
           tag2: "VRAM BOTTLENECK",
           tag3: "REQUIRES dGPU",
@@ -137,7 +127,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "System is severely under-equipped for heavy video production. Recommend adding an RTX 40-series GPU and populating Slot B2 with 16GB RAM."
         },
         esports: {
-          score: "65",
           tag1: "iGPU LIMITATION",
           tag2: "SINGLE-CH LATENCY",
           tag3: "720p LOW ONLY",
@@ -146,7 +135,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "Install a dedicated PCIe GPU in Slot 1 and enable Dual-Channel RAM to unlock 7800X3D's true 300+ FPS potential."
         },
         silent: {
-          score: "88",
           tag1: "ULTRA LOW POWER",
           tag2: "SILENT OPERATION",
           tag3: "CPU INFERENCE ONLY",
@@ -169,7 +157,7 @@ export const i18nData: Record<LanguageType, DictContent> = {
     copilotTitle: "Trợ Lý AI Phân Tích Phần Cứng",
     copilotDesc: "Đánh giá chuyên sâu dựa trên cấu hình phần cứng thật và hồ sơ người dùng",
     synergyLabel: "Điểm Cân Bằng:",
-    diagnosisBtn: "Chạy Chẩn Đoán AI",
+    diagnosisBtn: "Xem chi tiết",
     pillar1: "ĐỘ TƯƠNG THÍCH & SWEET SPOT",
     pillar2: "NHIỆT ĐỘ & ĐỘ AN TOÀN VRM",
     pillar3: "GỢI Ý TỐI ƯU THEO NHU CẦU",
@@ -178,7 +166,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
     personas: {
       live: {
         dev: {
-          score: "82",
           tag1: "DUAL-CH ỔN ĐỊNH",
           tag2: "NHIỆT ĐỘ MÁT",
           tag3: "TỐT CHO LẬP TRÌNH",
@@ -187,7 +174,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "16GB RAM đủ gánh 4-6 container Docker chạy đồng thời. Nên ưu tiên lưu project trên ổ SSD Intel để tốc độ compile nhanh nhất."
         },
         creator: {
-          score: "62",
           tag1: "iGPU TÍCH HỢP",
           tag2: "QUICKSYNC SẴN SÀNG",
           tag3: "NÊN GẮN THÊM GPU",
@@ -196,7 +182,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "Khuyến nghị gắn thêm GPU rời (như GTX 1660 / RTX 3050) để tăng tốc xuất video Premiere và dựng hiệu ứng 3D."
         },
         esports: {
-          score: "70",
           tag1: "1080p 60FPS",
           tag2: "ĐỘ TRỄ USB THẤP",
           tag3: "ESPORTS NHẸ",
@@ -205,7 +190,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "Nếu muốn chơi CS2 hoặc Apex Legends ở màn hình 144Hz mượt mà, cần nâng cấp thêm card đồ họa rời."
         },
         silent: {
-          score: "92",
           tag1: "MÁT & ÊM (42W)",
           tag2: "TIẾT KIỆM ĐIỆN",
           tag3: "VĂN PHÒNG",
@@ -216,7 +200,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
       },
       full: {
         dev: {
-          score: "97",
           tag1: "ĐẠT CHUẨN",
           tag2: "XUẤT SẮC",
           tag3: "TỐI ƯU",
@@ -225,7 +208,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "Với nhu cầu Fullstack Dev + Docker, 32GB RAM cân mượt 12+ containers đồng thời. Khe A1/B1 còn trống sẵn sàng nâng lên 64GB khi cần."
         },
         creator: {
-          score: "93",
           tag1: "TỐI ƯU",
           tag2: "RẤT TỐT",
           tag3: "CÂN NHẮC 64GB",
@@ -234,7 +216,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "Khi làm dự án Unreal Engine 5 đại cảnh hoặc After Effects nặng, 32GB RAM có thể chạm ngưỡng 85% tải. Khuyến nghị lên 64GB nếu làm phim chuyên nghiệp."
         },
         esports: {
-          score: "99",
           tag1: "ĐỈNH CAO",
           tag2: "KHÔNG NGHẼN",
           tag3: "ĐỘ TRỄ CỰC THẤP",
@@ -243,7 +224,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "Màn hình LG Nano-IPS 165Hz OC 180Hz bật G-Sync Full Range đồng bộ 300+ FPS mượt mà tuyệt đối, không có độ trễ phím/chuột."
         },
         silent: {
-          score: "96",
           tag1: "DƯỚI 30dB",
           tag2: "NHIỆT CỰC MÁT",
           tag3: "TỐI ƯU Q4/Q8",
@@ -254,7 +234,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
       },
       missing: {
         dev: {
-          score: "74",
           tag1: "NGHẼN BĂNG THÔNG RAM",
           tag2: "iGPU TÍCH HỢP",
           tag3: "KHUYẾN NGHỊ NÂNG CẤP",
@@ -263,7 +242,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "Khi chạy Docker cluster, 16GB RAM sẽ sớm bị tràn bộ nhớ (>90%). Khuyến nghị cắm thêm 1 thanh 16GB vào khe B2 để kích hoạt Dual-Channel 128-bit."
         },
         creator: {
-          score: "58",
           tag1: "THIẾU CARD ĐỒ HỌA",
           tag2: "TRÀN BỘ NHỚ",
           tag3: "CẦN LẮP THÊM GPU",
@@ -272,7 +250,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "Cấu hình chưa đáp ứng tốt nhu cầu Creator. Cần lắp thêm GPU NVIDIA RTX và cắm thêm 1 thanh RAM 16GB vào khe B2."
         },
         esports: {
-          score: "65",
           tag1: "iGPU YẾU",
           tag2: "TRỄ BỘ NHỚ CAO",
           tag3: "CHỈ CHƠI 720p LOW",
@@ -281,7 +258,6 @@ export const i18nData: Record<LanguageType, DictContent> = {
           text3: "Cần cắm thêm GPU rời vào khe PCIe x16 và thêm thanh RAM thứ 2 để mở khóa toàn bộ 300+ FPS của CPU 7800X3D."
         },
         silent: {
-          score: "88",
           tag1: "TIẾT KIỆM ĐIỆN",
           tag2: "IM LẶNG TUYỆT ĐỐI",
           tag3: "CHỈ CHẠY LLM NHỎ",
