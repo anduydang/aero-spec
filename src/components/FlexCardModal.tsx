@@ -4,6 +4,7 @@ import { toPng, toBlob } from 'html-to-image';
 import type { HardwareScore, HardwareTelemetryState, LanguageType, PersonaType } from '../types/hardware';
 import { i18nData } from '../data/i18nData';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 
 interface FlexCardModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export const FlexCardModal: React.FC<FlexCardModalProps> = ({
   const cardRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const dialogRef = useAccessibleDialog<HTMLDivElement>({ isOpen, onClose });
 
   if (!isOpen) return null;
 
@@ -80,6 +82,10 @@ export const FlexCardModal: React.FC<FlexCardModalProps> = ({
       <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
         {/* Backdrop Blur Overlay */}
         <motion.div 
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="flex-card-title"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -101,7 +107,7 @@ export const FlexCardModal: React.FC<FlexCardModalProps> = ({
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-base font-extrabold text-white">
+                <h3 id="flex-card-title" className="text-base font-extrabold text-white">
                   {lang === 'EN' ? 'AeroSpec Holographic Flex Card' : 'Thẻ Flex Phần Cứng AeroSpec Pro'}
                 </h3>
                 <p className="text-xs text-slate-400 font-mono">
@@ -112,6 +118,7 @@ export const FlexCardModal: React.FC<FlexCardModalProps> = ({
 
             <button 
               onClick={onClose}
+              aria-label={lang === 'EN' ? 'Close Flex Card' : 'Đóng thẻ Flex'}
               className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition cursor-pointer"
             >
               <X className="w-4 h-4" />

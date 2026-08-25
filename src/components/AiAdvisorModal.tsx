@@ -5,6 +5,7 @@ import { soundFx } from '../utils/soundFx';
 import { buildAdvisorContext } from '../utils/advisorContext';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 
 interface Message {
   id: string;
@@ -35,6 +36,7 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useAccessibleDialog<HTMLDivElement>({ isOpen, onClose });
 
   // Initialize initial welcome message
   useEffect(() => {
@@ -203,6 +205,10 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
       <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-4">
         {/* Backdrop */}
         <motion.div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ai-advisor-title"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -225,7 +231,7 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-extrabold text-white">
+                  <h3 id="ai-advisor-title" className="text-base font-extrabold text-white">
                     {lang === 'EN' ? 'AeroSpec AI Hardware Upgrade Consultant' : 'Trợ Lý AI Tư Vấn Nâng Cấp Phần Cứng'}
                   </h3>
                   <span className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded-full border flex items-center gap-1 ${
@@ -255,6 +261,7 @@ Never infer an exact PSU, sensor reading, connector, motherboard feature, or com
 
               <button
                 onClick={onClose}
+                aria-label={lang === 'EN' ? 'Close AI advisor' : 'Đóng trợ lý AI'}
                 className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition cursor-pointer"
               >
                 <X className="w-4 h-4" />

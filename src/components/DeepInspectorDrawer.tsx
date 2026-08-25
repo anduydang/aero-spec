@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { X, Sparkles, Binary, Cpu, Layers, HardDrive, Monitor, Shield, Zap, Fan, Wifi, Tv, Mouse, Keyboard, Headphones, Plug2 } from 'lucide-react';
 import type { InspectorItem, LanguageType } from '../types/hardware';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 
 interface DeepInspectorDrawerProps {
   item: InspectorItem | null;
@@ -18,19 +19,7 @@ export const DeepInspectorDrawer: React.FC<DeepInspectorDrawerProps> = ({
   archTitle,
   onClose
 }) => {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    if (item) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
-    }
-    return () => {
-      document.body.style.overflow = 'auto';
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [item, onClose]);
+  const dialogRef = useAccessibleDialog<HTMLElement>({ isOpen: Boolean(item), onClose });
 
   if (!item) return null;
 
@@ -66,6 +55,10 @@ export const DeepInspectorDrawer: React.FC<DeepInspectorDrawerProps> = ({
 
         {/* Drawer Panel with Spring Physics */}
         <motion.aside 
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="inspector-title"
           initial={{ x: '100%' }}
           animate={{ x: 0 }}
           exit={{ x: '100%' }}
@@ -82,11 +75,12 @@ export const DeepInspectorDrawer: React.FC<DeepInspectorDrawerProps> = ({
                 <span className="text-xs font-mono font-extrabold px-2.5 py-0.5 dark:bg-sky-950 dark:text-sky-300 bg-sky-100 text-sky-800 border border-sky-300 rounded shadow-sm">
                   {item.badge}
                 </span>
-                <h2 className="text-lg font-black dark:text-white text-slate-900 mt-1">{item.title}</h2>
+                <h2 id="inspector-title" className="text-lg font-black dark:text-white text-slate-900 mt-1">{item.title}</h2>
               </div>
             </div>
             <button 
               onClick={onClose} 
+              aria-label={lang === 'EN' ? 'Close component inspector' : 'Đóng trình kiểm tra linh kiện'}
               className="w-9 h-9 rounded-xl dark:bg-slate-800 dark:hover:bg-slate-750 bg-slate-100 hover:bg-slate-200 text-slate-600 dark:text-slate-300 flex items-center justify-center border dark:border-slate-700 border-slate-300 transition cursor-pointer shadow-sm"
             >
               <X className="w-5 h-5" />
