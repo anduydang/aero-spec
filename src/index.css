@@ -339,7 +339,7 @@ html select option { background: var(--card-solid); color: var(--text-main); }
   box-shadow: 0 28px 90px -30px rgba(0, 0, 0, 0.75);
 }
 .overlay-section { color: var(--text-main); background: var(--card-bg); }
-.overlay-canvas { color: var(--text-main); background: color-mix(in srgb, var(--app-bg), var(--card-solid) 38%); }
+.overlay-canvas { color: var(--text-main); background: var(--surface-raised); }
 .overlay-inset { color: var(--text-main); background: var(--chip-bg); border-color: var(--chip-border); }
 .overlay-divider { border-color: var(--card-border); }
 .overlay-control {
@@ -358,7 +358,7 @@ html select option { background: var(--card-solid); color: var(--text-main); }
 .overlay-icon-button:hover { color: var(--text-main); border-color: var(--primary-accent); }
 .overlay-input {
   color: var(--text-main);
-  background: var(--app-bg);
+  background: var(--card-solid);
   border: 1px solid var(--chip-border);
   border-radius: var(--radius-control);
 }

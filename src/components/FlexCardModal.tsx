@@ -131,8 +131,10 @@ export const FlexCardModal: React.FC<FlexCardModalProps> = ({
             {/* THIS IS THE CARD CONTAINER RASTERIZED TO PNG */}
             <div 
               ref={cardRef}
+              data-testid="export-flex-card"
               className="w-full max-w-[620px] rounded-3xl p-6 sm:p-7 relative overflow-hidden bg-gradient-to-br from-slate-900 via-[#0b1329] to-slate-950 border-2 border-sky-500/40 shadow-2xl flex flex-col gap-5 text-white select-none"
               style={{
+                backgroundColor: '#0b1329',
                 backgroundImage: 'radial-gradient(ellipse at top right, rgba(14, 165, 233, 0.15), transparent 60%), radial-gradient(ellipse at bottom left, rgba(99, 102, 241, 0.12), transparent 60%)'
               }}
             >

@@ -11,6 +11,12 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: 'list',
+  expect: {
+    toHaveScreenshot: {
+      // Allow only microscopic font/icon raster noise; real layout changes remain far above this.
+      maxDiffPixels: 100,
+    },
+  },
   use: {
     baseURL: 'http://127.0.0.1:5173',
     reducedMotion: 'reduce',

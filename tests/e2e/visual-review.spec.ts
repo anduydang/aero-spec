@@ -6,6 +6,9 @@ test.beforeEach(async ({ page }) => {
     if (!localStorage.getItem('aerospec_theme')) localStorage.setItem('aerospec_theme', 'obsidian')
   })
   await page.goto('/')
+  await page.addStyleTag({
+    content: '*, *::before, *::after { transition: none !important; caret-color: transparent !important; }',
+  })
 })
 
 test('switches through all five themes from settings', async ({ page }) => {
@@ -116,6 +119,15 @@ test('maintains readable semantic contrast in every theme', async ({ page }, tes
   }
 })
 
+test('captures the visual theme picker', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'edge-1440', 'Theme picker baseline uses the review viewport')
+  await page.getByRole('button', { name: 'Settings' }).click()
+  const settings = page.getByRole('group', { name: 'Display and app settings' })
+  await expect(settings).toBeVisible()
+  await expect(settings.getByRole('radiogroup', { name: 'Theme' })).toBeVisible()
+  await expect(settings).toHaveScreenshot('theme-picker-obsidian.png', { animations: 'disabled' })
+})
+
 test('captures and keyboard-checks AI, inspector, and Flex overlays', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'edge-1440', 'Overlay baselines use the review viewport')
   await page.locator('select[aria-label="Hardware profile"]').selectOption('full')
@@ -163,6 +175,7 @@ test('captures and keyboard-checks AI, inspector, and Flex overlays', async ({ p
   const flexDialog = page.getByRole('dialog', { name: 'AeroSpec Holographic Flex Card' })
   await expect(flexDialog).toBeVisible()
   await expectSemanticPanel(flexDialog)
+  await expect(page.getByTestId('export-flex-card')).toHaveCSS('background-color', 'rgb(11, 19, 41)')
   await expect(page).toHaveScreenshot('overlay-flex.png', {
     animations: 'disabled',
   })
