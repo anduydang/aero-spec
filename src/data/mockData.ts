@@ -1,7 +1,9 @@
 import type { HardwareTelemetryState, InspectorItem } from '../types/hardware';
+import { simulatedCapabilities } from './liveTelemetry';
 
 // 1. LIVE PC TELEMETRY
 export const liveRigTelemetry: HardwareTelemetryState = {
+  telemetry: { mode: 'simulated', status: 'ready', capabilities: simulatedCapabilities() },
   hostName: "DESKTOP-VNPT-WORK",
   uptime: "02h 45m",
   busFrequencyHz: 1000,
@@ -13,6 +15,7 @@ export const liveRigTelemetry: HardwareTelemetryState = {
     cache: "9MB Intel Smart Cache",
     avgClockMhz: 2808,
     maxClockMhz: 4000,
+    currentLoadPct: 33,
     tempC: 46.5,
     tjMaxC: 100.0,
     vcoreV: 1.050,
@@ -84,7 +87,8 @@ export const liveRigTelemetry: HardwareTelemetryState = {
     pcieLink: "Direct Ring Bus / System Agent Link",
     rebarActive: false,
     tempC: 44.0,
-    powerW: 12
+    powerW: 12,
+    driverVersion: "Simulated"
   },
   cooler: {
     name: "Dell OEM Copper Core Tower Cooler",
@@ -152,6 +156,7 @@ export const liveRigTelemetry: HardwareTelemetryState = {
 
 // 2. FULLY LOADED SIMULATOR RIG
 export const fullRigTelemetry: HardwareTelemetryState = {
+  telemetry: { mode: 'simulated', status: 'ready', capabilities: simulatedCapabilities() },
   hostName: "DESKTOP-TITAN-X",
   uptime: "04h 32m",
   busFrequencyHz: 1000,
@@ -163,6 +168,7 @@ export const fullRigTelemetry: HardwareTelemetryState = {
     cache: "96MB 3D V-Cache",
     avgClockMhz: 4850,
     maxClockMhz: 5050,
+    currentLoadPct: 44,
     tempC: 56.2,
     tjMaxC: 89.0,
     vcoreV: 1.085,
@@ -234,7 +240,8 @@ export const fullRigTelemetry: HardwareTelemetryState = {
     pcieLink: "PCIe 4.0 x16 @ 16.0 GT/s",
     rebarActive: true,
     tempC: 54.0,
-    powerW: 215
+    powerW: 215,
+    driverVersion: "Simulated"
   },
   cooler: {
     name: "Arctic Liquid Freezer III 360",
@@ -337,7 +344,8 @@ export const missingRigTelemetry: HardwareTelemetryState = {
     pcieLink: "PCIe x16 [EMPTY - iGPU ACTIVE]",
     rebarActive: false,
     tempC: 45.0,
-    powerW: 15
+    powerW: 15,
+    driverVersion: "Simulated"
   },
   psu: {
     ...fullRigTelemetry.psu,

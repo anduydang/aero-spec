@@ -2,6 +2,78 @@ export type PersonaType = 'dev' | 'creator' | 'esports' | 'silent';
 export type RigProfileType = 'live' | 'full' | 'missing';
 export type LanguageType = 'EN' | 'VI';
 export type ThemeType = 'arctic' | 'latte' | 'matcha' | 'sakura' | 'slate';
+export type TelemetryMode = 'live' | 'simulated';
+export type DetectionStatus = 'scanning' | 'ready' | 'unavailable' | 'error';
+
+export interface TelemetryCapabilities {
+  cpuIdentity: boolean;
+  cpuLoad: boolean;
+  cpuSensors: boolean;
+  ramIdentity: boolean;
+  ramTimings: boolean;
+  motherboardIdentity: boolean;
+  motherboardSensors: boolean;
+  gpuIdentity: boolean;
+  gpuSensors: boolean;
+  storageIdentity: boolean;
+  storageSensors: boolean;
+  psu: boolean;
+  network: boolean;
+  peripherals: boolean;
+}
+
+export interface TelemetryMetadata {
+  mode: TelemetryMode;
+  status: DetectionStatus;
+  capabilities: TelemetryCapabilities;
+  error?: string;
+}
+
+export interface NativeHardwareTelemetryPayload {
+  host_name?: string;
+  os_name?: string;
+  uptime_formatted?: string;
+  cpu?: {
+    name?: string;
+    cores?: number;
+    threads?: number;
+    max_clock_mhz?: number;
+    current_load_pct?: number;
+    per_core_loads?: number[];
+  };
+  ram?: {
+    total_gb?: number;
+    channel_mode?: string;
+    speed_mhz?: number;
+    slots?: {
+      slot?: string;
+      size?: string;
+      speed_mhz?: number;
+      manufacturer?: string;
+      status?: string;
+    }[];
+    is_single_channel?: boolean;
+  };
+  motherboard?: {
+    manufacturer?: string;
+    model?: string;
+    version?: string;
+    bios_vendor?: string;
+    bios_version?: string;
+    bios_date?: string;
+  };
+  gpu?: {
+    name?: string;
+    is_discrete?: boolean;
+    vram_mb?: number;
+    driver_version?: string;
+  };
+  disks?: {
+    model?: string;
+    size_gb?: number;
+    media_type?: string;
+  }[];
+}
 
 export interface MicroSpec {
   label: string;
@@ -32,6 +104,7 @@ export interface PersonaInsight {
 }
 
 export interface HardwareTelemetryState {
+  telemetry: TelemetryMetadata;
   hostName: string;
   uptime: string;
   busFrequencyHz: number;
@@ -43,6 +116,7 @@ export interface HardwareTelemetryState {
     cache: string;
     avgClockMhz: number;
     maxClockMhz: number;
+    currentLoadPct: number;
     tempC: number;
     tjMaxC: number;
     vcoreV: number;
@@ -110,6 +184,7 @@ export interface HardwareTelemetryState {
     rebarActive: boolean;
     tempC: number;
     powerW: number;
+    driverVersion: string;
   };
   cooler: {
     name: string;

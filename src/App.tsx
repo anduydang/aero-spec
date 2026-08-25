@@ -7,8 +7,9 @@ import { CopilotFooter } from './components/CopilotFooter';
 import { DeepInspectorDrawer } from './components/DeepInspectorDrawer';
 import { FlexCardModal } from './components/FlexCardModal';
 import { AiAdvisorModal } from './components/AiAdvisorModal';
-import type { LanguageType, PersonaType, RigProfileType, ThemeType, HardwareTelemetryState } from './types/hardware';
-import { liveRigTelemetry, fullRigTelemetry, missingRigTelemetry } from './data/mockData';
+import type { LanguageType, PersonaType, RigProfileType, ThemeType, HardwareTelemetryState, NativeHardwareTelemetryPayload } from './types/hardware';
+import { fullRigTelemetry, missingRigTelemetry } from './data/mockData';
+import { createLiveTelemetryBaseline, mergeNativeTelemetry } from './data/liveTelemetry';
 import { getDynamicInspectorItem } from './data/inspectorGenerator';
 import { i18nData } from './data/i18nData';
 import { soundFx } from './utils/soundFx';
@@ -21,75 +22,42 @@ export function App() {
   const [activeInspectorId, setActiveInspectorId] = useState<string | null>(null);
   const [isFlexCardOpen, setIsFlexCardOpen] = useState<boolean>(false);
   const [isAiAdvisorOpen, setIsAiAdvisorOpen] = useState<boolean>(false);
-  const [liveData, setLiveData] = useState<HardwareTelemetryState>(liveRigTelemetry);
+  const [liveData, setLiveData] = useState<HardwareTelemetryState>(() => createLiveTelemetryBaseline());
 
   // Attempt to invoke native Tauri hardware detection if running in Tauri
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchNativeTelemetry() {
+      const isTauri = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
+      if (!isTauri) {
+        setLiveData(prev => ({
+          ...prev,
+          telemetry: { ...prev.telemetry, status: 'unavailable' },
+        }));
+        return;
+      }
+
       try {
-        // @ts-ignore
-        if (window.__TAURI_INTERNALS__ || window.__TAURI__) {
-          const { invoke } = await import('@tauri-apps/api/core');
-          const res: any = await invoke('get_live_hardware_telemetry');
-          if (res && res.cpu) {
-            setLiveData(prev => ({
-              ...prev,
-              hostName: res.host_name || prev.hostName,
-              uptime: res.uptime_formatted || prev.uptime,
-              isLiveDetected: true,
-              cpu: {
-                ...prev.cpu,
-                name: res.cpu.name || prev.cpu.name,
-                cores: res.cpu.cores || prev.cpu.cores,
-                threads: res.cpu.threads || prev.cpu.threads,
-                maxClockMhz: res.cpu.max_clock_mhz || prev.cpu.maxClockMhz,
-                perCoreLoads: res.cpu.per_core_loads && res.cpu.per_core_loads.length > 0 ? res.cpu.per_core_loads : prev.cpu.perCoreLoads,
-              },
-              ram: {
-                ...prev.ram,
-                totalGb: res.ram.total_gb || prev.ram.totalGb,
-                channelMode: res.ram.channel_mode || prev.ram.channelMode,
-                isSingleChannel: res.ram.is_single_channel !== undefined ? res.ram.is_single_channel : prev.ram.isSingleChannel,
-                slots: res.ram.slots && res.ram.slots.length > 0 ? res.ram.slots.map((s: any) => ({
-                  slot: s.slot,
-                  size: s.size,
-                  status: 'active',
-                  label: 'DDR'
-                })) : prev.ram.slots,
-              },
-              motherboard: {
-                ...prev.motherboard,
-                name: `${res.motherboard.manufacturer} ${res.motherboard.model}` || prev.motherboard.name,
-                biosVendor: res.motherboard.bios_vendor || prev.motherboard.biosVendor,
-                biosVersion: res.motherboard.bios_version || prev.motherboard.biosVersion,
-                biosDate: res.motherboard.bios_date || prev.motherboard.biosDate,
-              },
-              gpu: {
-                ...prev.gpu,
-                name: res.gpu.name || prev.gpu.name,
-                isDiscrete: res.gpu.is_discrete !== undefined ? res.gpu.is_discrete : prev.gpu.isDiscrete,
-              },
-              storage: {
-                ...prev.storage,
-                m2_1: res.disks && res.disks[0] ? {
-                  ...prev.storage.m2_1,
-                  name: `${res.disks[0].model} (${res.disks[0].size_gb}GB)`,
-                  isPopulated: true,
-                } : prev.storage.m2_1,
-                m2_2: res.disks && res.disks[1] ? {
-                  ...prev.storage.m2_2,
-                  name: `${res.disks[1].model} (${res.disks[1].size_gb}GB)`,
-                  isPopulated: true,
-                } : prev.storage.m2_2,
-              }
-            }));
-          }
-        }
+        const { invoke } = await import('@tauri-apps/api/core');
+        const response = await invoke<NativeHardwareTelemetryPayload>('get_live_hardware_telemetry');
+        if (!cancelled) setLiveData(mergeNativeTelemetry(response));
       } catch (err) {
-        console.warn('Native Tauri hardware probe unavailable, running live baseline telemetry:', err);
+        console.warn('Native Tauri hardware probe unavailable:', err);
+        if (!cancelled) {
+          setLiveData(prev => ({
+            ...prev,
+            telemetry: {
+              ...prev.telemetry,
+              status: 'error',
+              error: err instanceof Error ? err.message : String(err),
+            },
+          }));
+        }
       }
     }
     fetchNativeTelemetry();
+    return () => { cancelled = true; };
   }, []);
 
   // Update Theme Classes on Root & LocalStorage
