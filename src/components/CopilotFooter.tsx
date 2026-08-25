@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Sparkles, RefreshCw, CheckCircle2, ShieldCheck, Lightbulb } from 'lucide-react';
-import type { PersonaInsight } from '../types/hardware';
+import type { HardwareTelemetryState, PersonaInsight, PersonaType } from '../types/hardware';
+import { calculateHardwareSynergyScore } from '../utils/scoreCalculator';
 import { motion } from 'framer-motion';
 
 interface CopilotFooterProps {
+  telemetry: HardwareTelemetryState;
+  persona: PersonaType;
   copilotTitle: string;
   copilotDesc: string;
   synergyLabel: string;
@@ -15,6 +18,8 @@ interface CopilotFooterProps {
 }
 
 export const CopilotFooter: React.FC<CopilotFooterProps> = ({
+  telemetry,
+  persona,
   copilotTitle,
   copilotDesc,
   synergyLabel,
@@ -25,6 +30,7 @@ export const CopilotFooter: React.FC<CopilotFooterProps> = ({
   insight
 }) => {
   const [isDiagnosing, setIsDiagnosing] = useState(false);
+  const calculated = calculateHardwareSynergyScore(telemetry, persona);
 
   const handleRunDiagnosis = () => {
     setIsDiagnosing(true);
@@ -48,24 +54,26 @@ export const CopilotFooter: React.FC<CopilotFooterProps> = ({
               </h3>
               <span className="px-1.5 py-0.2 text-[10px] font-mono font-extrabold dark:bg-sky-950 dark:text-sky-300 bg-sky-100 text-sky-800 border border-sky-300 rounded-full flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
-                gemini-3.7-flash
+                gemini-3.7-flash (Hardware Engine)
               </span>
             </div>
             <p className="text-[11px] dark:text-slate-400 text-slate-600 font-medium leading-tight mt-0.5">
-              {copilotDesc}
+              {copilotDesc} • {calculated.verdict}
             </p>
           </div>
         </div>
 
-        {/* Synergy Score & Run Trigger */}
+        {/* Dynamic Synergy Score & Grade */}
         <div className="flex items-center gap-3">
           <div className="flex items-baseline gap-2 dark:bg-slate-900 bg-white px-3 py-1 rounded-xl border dark:border-slate-800 border-slate-300 shadow-sm">
             <span className="text-[11px] dark:text-slate-300 text-slate-600 font-bold">{synergyLabel}</span>
-            <span className="text-base font-black font-mono text-emerald-600 dark:text-emerald-400">
+            <span className={`text-base font-black font-mono ${
+              calculated.score >= 80 ? 'text-emerald-500' : calculated.score >= 55 ? 'text-amber-500' : 'text-rose-500'
+            }`}>
               {isDiagnosing ? (
                 <span className="animate-pulse text-sky-500 text-xs">Evaluating...</span>
               ) : (
-                `${insight.score} / 100`
+                `${calculated.score} / 100 [Grade ${calculated.grade}]`
               )}
             </span>
           </div>

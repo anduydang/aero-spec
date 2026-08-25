@@ -155,6 +155,8 @@ export function App() {
 
       {/* Bottom Full-Width Neural Hardware Copilot */}
       <CopilotFooter 
+        telemetry={telemetry}
+        persona={persona}
         copilotTitle={dict.copilotTitle}
         copilotDesc={dict.copilotDesc}
         synergyLabel={dict.synergyLabel}
