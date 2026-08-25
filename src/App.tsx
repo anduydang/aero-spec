@@ -7,7 +7,8 @@ import { CopilotFooter } from './components/CopilotFooter';
 import { DeepInspectorDrawer } from './components/DeepInspectorDrawer';
 import { FlexCardModal } from './components/FlexCardModal';
 import type { LanguageType, PersonaType, RigProfileType, ThemeType, HardwareTelemetryState } from './types/hardware';
-import { liveRigTelemetry, fullRigTelemetry, missingRigTelemetry, inspectorDatabase } from './data/mockData';
+import { liveRigTelemetry, fullRigTelemetry, missingRigTelemetry } from './data/mockData';
+import { getDynamicInspectorItem } from './data/inspectorGenerator';
 import { i18nData } from './data/i18nData';
 
 export function App() {
@@ -99,7 +100,7 @@ export function App() {
   const telemetry = rigProfile === 'live' ? liveData : (rigProfile === 'full' ? fullRigTelemetry : missingRigTelemetry);
   const dict = i18nData[lang];
   const currentInsight = dict.personas[rigProfile][persona];
-  const activeInspectorItem = activeInspectorId ? inspectorDatabase[activeInspectorId] || inspectorDatabase['cpu'] : null;
+  const activeInspectorItem = activeInspectorId ? getDynamicInspectorItem(activeInspectorId, telemetry, lang, persona) : null;
 
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   const toggleLang = () => setLang(prev => prev === 'EN' ? 'VI' : 'EN');
