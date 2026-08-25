@@ -2,7 +2,7 @@
 
 ## Goal
 
-Turn AeroSpec into a trustworthy personal Windows hardware viewer: show every component Windows can actually identify, expose accurate NVIDIA telemetry when the installed driver supports it, keep unavailable data honest, remain visually composed in a maximized Full-HD Tauri window, and ship a usable NSIS Setup executable.
+Turn AeroSpec into a trustworthy personal Windows hardware viewer: show the supported CPU, motherboard/BIOS, DIMM, display-adapter, physical-disk, active-network, monitor, keyboard, pointing-device, and audio categories that Windows can identify; expose accurate NVIDIA telemetry when the installed driver supports it; keep unavailable data honest; remain visually composed in a maximized Full-HD Tauri window; and ship a usable NSIS Setup executable.
 
 This design extends and supersedes the hardware-detection exclusions in `2026-08-25-aerospec-trust-ui-refresh-design.md`. Its trust, capability, privacy, and scoring rules remain in force except where this document is more specific.
 
@@ -43,7 +43,7 @@ For this personal viewer, AeroSpec will not install, load, allowlist, or ask the
 
 ## Versioned Wire Contract
 
-The Rust command returns a single bounded UTF-8 JSON document. Units are encoded in field names; numeric fields never contain formatted text.
+The two Rust commands return bounded UTF-8 JSON documents. Static and dynamic responses are merged into `NativeSnapshotV2` by the frontend store. Units are encoded in field names; numeric fields never contain formatted text.
 
 ```ts
 type ProviderId =
@@ -53,7 +53,8 @@ type ProviderId =
   | 'windows-dynamic'
   | 'nvidia';
 
-type SectionStatus = 'ok' | 'unsupported' | 'permission-required' | 'error';
+type LeafStatus = 'ok' | 'unsupported' | 'permission-required' | 'error';
+type SectionStatus = 'ok' | 'partial' | 'unsupported' | 'permission-required' | 'error';
 type SnapshotStatus = 'ready' | 'partial' | 'unavailable' | 'error';
 type DataSource = 'windows' | 'nvidia' | 'manual' | 'simulator';
 
@@ -74,9 +75,16 @@ interface Section<T> {
   diagnostic?: ProviderDiagnostic;
 }
 
+interface QueryResult<T> {
+  status: LeafStatus;
+  data: T | null;
+  diagnostic?: ProviderDiagnostic;
+}
+
 interface NativeSnapshotV2 {
   schemaVersion: 2;
   snapshotId: string;       // random UUID, not hardware-derived
+  inventoryGeneration: number;
   capturedAt: string;       // newest section timestamp, RFC 3339 UTC
   status: SnapshotStatus;
   inventory: Section<InventoryData>;
@@ -86,11 +94,48 @@ interface NativeSnapshotV2 {
   nvidia: Section<NvidiaData>;
 }
 
+interface StaticSnapshotRequestV2 {
+  schemaVersion: 2;
+  generation: number;       // monotonically increasing frontend request ID
+}
+interface StaticSnapshotResponseV2 {
+  schemaVersion: 2;
+  generation: number;       // exact echo of request generation
+  snapshotId: string;
+  capturedAt: string;
+  inventory: Section<InventoryData>;
+  storage: Section<StorageData>;
+  pnp: Section<PnpData>;
+}
+
+interface DynamicSnapshotRequestV2 {
+  schemaVersion: 2;
+  generation: number;       // monotonically increasing dynamic request ID
+  inventoryGeneration: number;
+}
+interface DynamicSnapshotResponseV2 {
+  schemaVersion: 2;
+  generation: number;       // exact echo of request generation
+  inventoryGeneration: number;
+  capturedAt: string;
+  dynamic: Section<DynamicData>;
+  nvidia: Section<NvidiaData>;
+}
+
 interface InventoryData {
-  cpu: CpuDevice | null;
-  motherboard: MotherboardDevice | null;
-  memoryModules: MemoryModule[];
-  displayAdapters: DisplayAdapter[];
+  system: QueryResult<SystemDevice>;
+  cpu: QueryResult<CpuDevice>;
+  motherboard: QueryResult<MotherboardDevice>;
+  memoryModules: QueryResult<MemoryModule[]>;
+  displayAdapters: QueryResult<DisplayAdapter[]>;
+}
+
+interface SystemDevice {
+  localId: string;
+  hostName?: string;        // sensitive, local header/details only
+  osName?: string;
+  osVersion?: string;
+  uptimeSeconds?: number;
 }
 
 interface CpuDevice {
@@ -134,10 +179,9 @@ interface DisplayAdapter {
   subsystemId?: string;
   pciBusId?: string;
   driverVersion?: string;
-  wmiAdapterRamBytes?: number;
 }
 
-interface StorageData { devices: StorageDevice[] }
+interface StorageData { devices: QueryResult<StorageDevice[]> }
 interface StorageDevice {
   localId: string;
   deviceNumber?: number;
@@ -152,10 +196,10 @@ interface StorageDevice {
 }
 
 interface PnpData {
-  networks: NetworkDevice[];
-  displays: PnpDevice[];
-  inputDevices: PnpDevice[];
-  audioDevices: PnpDevice[];
+  networks: QueryResult<NetworkDevice[]>;
+  displays: QueryResult<PnpDevice[]>;
+  inputDevices: QueryResult<PnpDevice[]>;
+  audioDevices: QueryResult<PnpDevice[]>;
 }
 interface NetworkDevice {
   localId: string;
@@ -193,16 +237,45 @@ interface NvidiaGpu {
 }
 ```
 
-Arrays are capped at 64 entries per category, strings at 512 UTF-8 bytes before frontend rendering, and the entire payload at 2 MiB. Values outside physical bounds are omitted and create a diagnostic code rather than being clamped into plausibility.
+Tauri exposes exactly `get_static_snapshot_v2(request: StaticSnapshotRequestV2)` and `get_dynamic_snapshot_v2(request: DynamicSnapshotRequestV2)`. Rust keeps only the active inventory-generation identity map and in-flight/coalescing handles; it does not retain display values. The frontend telemetry store owns current values, last-success timestamps, stale expiry, and the merged `NativeSnapshotV2`. It accepts a response only when its echoed generation equals the latest requested generation. A dynamic response is also rejected when its `inventoryGeneration` is not the currently accepted static generation.
 
-`ready` means the core Windows inventory succeeded. `partial` means it succeeded but an expected Windows storage/PnP section failed, or an NVIDIA adapter was detected and its NVIDIA probe failed. `unavailable` means the command is running outside supported Windows/Tauri conditions. `error` means no usable core inventory was returned. An absent NVIDIA adapter yields `nvidia.status = unsupported` and does not make the snapshot partial.
+Status/data invariants are strict:
+
+- A leaf `ok` requires non-null data. Empty arrays are valid data.
+- Leaf `unsupported`, `permission-required`, and `error` require null data plus an appropriate diagnostic except for expected `unsupported` capability absence.
+- Section `ok` requires non-null data and every contained leaf to be either `ok` or expected `unsupported`.
+- Section `partial` requires non-null data with at least one successful leaf and at least one failed or permission-required leaf.
+- Section `unsupported`, `permission-required`, and `error` require null data. A section never returns partial data under an error status.
+- Failure of one inventory or PnP subquery cannot discard another subquery's successful result; the parent becomes `partial`.
+
+Arrays are sorted deterministically, capped at 64 entries per category, and strings are capped at 512 UTF-8 bytes before frontend rendering. If more than 64 items exist, the first 64 after the provider-specific stable sort are returned and `ITEM_LIMIT_EXCEEDED` reports the original/returned counts; the UI displays a truncation notice. The entire payload is capped at 2 MiB.
+
+Validation bounds are inclusive. Out-of-bounds values are omitted and produce `VALUE_OUT_OF_RANGE` rather than being clamped:
+
+| Field family | Valid range |
+| --- | --- |
+| Physical/logical CPU count | 1–4,096 |
+| CPU/GPU clock | 0–100,000 MHz; CPU maximum must be at least 1 MHz |
+| CPU cache | 1–1,073,741,824 KiB |
+| DIMM speed | 1–20,000 MT/s |
+| DIMM/disk capacity | 1 MiB–16 PiB |
+| Uptime | 0–3,155,760,000 seconds |
+| Load/utilization/fan | 0–100 percent |
+| Temperature | -50–250 °C |
+| GPU power draw/limit | 0–10,000 W |
+| Network link speed | 0–1,000,000,000,000,000 bps |
+
+`ready` means core CPU/system inventory succeeded and all expected Windows sections are usable. `partial` means core inventory succeeded but an expected Windows leaf/section failed, or an expected dynamic provider has been stale for more than 10 seconds or unavailable for more than 30 seconds. A dynamic failure while its prior value is no more than 10 seconds old leaves aggregate status ready; the value is still fresh. `unavailable` means the command is running outside supported Windows/Tauri conditions. `error` means no usable core CPU/system inventory was returned. An absent NVIDIA adapter yields `nvidia.status = unsupported` and never makes the snapshot partial.
 
 ## Provider and Identity Rules
 
 Windows inventory, Windows storage, Windows PnP, Windows dynamic load, and NVIDIA are separate providers even if several are collected by one fixed PowerShell script. Their errors and timestamps remain independent.
 
+`localId` is a non-identifying, session-scoped ordinal such as `gpu:0` or `disk:2`. Before assignment, each category is sorted by its private provider join key and then normalized display name; the private key never enters `localId`. IDs remain stable for the accepted static inventory generation but may change after a topology-changing static refresh or app restart. Rust keeps the private raw-key-to-local-ID map only in memory so dynamic NVIDIA results can reference the accepted static generation. If two private keys collide, ordinal tie-breaking is deterministic and `LOCAL_ID_COLLISION` is recorded. `localId` is still excluded from AI, exports, and logs as defense in depth.
+
 - Windows is authoritative for CPU, board, DIMM, storage, network, display, and connected-device identity.
 - NVIDIA is authoritative only for matched NVIDIA VRAM, driver, temperature, utilization, power, clock, and fan fields. It does not overwrite the Windows PnP identity.
+- WMI `AdapterRAM` is neither rendered nor scored as VRAM. If NVIDIA telemetry is absent, VRAM is unavailable instead of displaying the known 32-bit WMI value as authoritative.
 - GPU joins prefer an exact PCI bus ID, then an exact vendor/device/subsystem tuple plus PnP location. A one-to-one name fallback is allowed only when exactly one NVIDIA device exists on each side. Ambiguous matches stay separate and emit `GPU_JOIN_AMBIGUOUS`.
 - Storage joins use Windows disk/device-number associations and PnP instance IDs, never model name alone.
 - PnP entries deduplicate by instance ID. When it is missing, category plus normalized manufacturer/name is the fallback and the first non-empty value wins.
@@ -218,7 +291,7 @@ Rust resolves Windows PowerShell only from the system Windows directory returned
 
 ### NVIDIA provider
 
-Rust resolves `nvidia-smi.exe` only from known NVIDIA/System32 installation locations, obtains a canonical absolute path, rejects reparse-point escapes, and verifies the file with Windows `WinVerifyTrust`. It never executes the first PATH match.
+Rust searches `nvidia-smi.exe` in this order only: (1) `<GetSystemDirectoryW>\nvidia-smi.exe`, then (2) `<FOLDERID_ProgramFiles>\NVIDIA Corporation\NVSMI\nvidia-smi.exe`. The folders come from Windows APIs, not environment variables. For each candidate it obtains the final canonical handle path, requires it to remain beneath the expected base, and rejects any reparse point in the candidate path. Execution additionally requires `WinVerifyTrust` success and an Authenticode leaf-certificate subject whose organization is exactly `NVIDIA Corporation`; another merely trusted signer is rejected. It never executes a PATH match.
 
 The exact query is:
 
@@ -248,9 +321,9 @@ CSV `N/A`, `[Not Supported]`, blank, non-finite, or out-of-range values become a
 
 ## PSU and Storage Scoring
 
-Auto-detection is attempted only when Windows reports an explicit software-visible PSU device. AeroSpec never derives wattage or model from system power draw.
+Automatic PSU detection is out of scope for this release because none of the selected providers has a trustworthy generic PSU contract. AeroSpec never derives wattage or model from system power draw.
 
-For conventional desktop PSUs, the right panel provides a local manual profile: brand/model, rated wattage, efficiency rating, and note. It is stored under `aerospec.psu-profile.v1` and labelled `Manual`. Sensor-only PSU fields remain unavailable.
+The right panel therefore has exactly two live PSU states: a local manual profile, or unavailable. The profile contains brand/model, rated wattage, efficiency rating, and note; it is stored under `aerospec.psu-profile.v1` and labelled `Manual`. PSU sensor fields remain unavailable.
 
 No selected provider measures storage throughput. Therefore the live storage performance factor remains unavailable and is excluded by the existing score renormalization rule. Health, bus type, and media type are descriptive only. The live UI removes the fabricated fixed upgrade bay because Windows cannot reliably enumerate free motherboard/storage slots. Simulator profiles may show a simulated upgrade bay only when clearly labelled Simulation.
 
@@ -260,7 +333,7 @@ Adapters remain pure and unit-testable. Simulator profiles use the same view mod
 
 Storage cards render every `storage.devices[]` item, subject only to the documented safety cap. The right column contains independent sections:
 
-1. Power supply: detected, manual, or honest unavailable state.
+1. Power supply: manual or honest unavailable state.
 2. Network: active adapters and link state.
 3. Connected devices: displays, input, and audio summaries with expandable local details.
 
@@ -268,7 +341,7 @@ A missing PSU never hides network or device results. Adjacent values may share a
 
 ## Privacy Boundary
 
-Serial numbers, MAC addresses, PnP instance IDs, NVIDIA UUIDs, PCI locations, host names, snapshot IDs, local paths, and raw diagnostics are sensitive-local fields.
+Serial numbers, MAC addresses, PnP instance IDs, NVIDIA UUIDs, PCI locations, host names, snapshot IDs, session `localId` values, local paths, and raw diagnostics are sensitive-local fields.
 
 - They may appear only in an explicitly expanded local Detection Details/component-details view.
 - Gemini prompts use an allowlist of marketing component name, capacity, speed, health category, and non-identifying load/temperature/power values. They exclude every sensitive-local field.
@@ -359,8 +432,8 @@ A hardware item removed or disabled after fixture capture is a documented enviro
 
 - Redacted target-machine capture and parser fixtures satisfy the reproducible facts above; any conditional provider omission is shown as unavailable with a diagnostic rather than guessed.
 - No value from the old Dell/i5 simulator profile appears in Live mode.
-- Every detected disk is rendered; no real array is sliced to two and no fake free bay is shown.
-- PSU identity is explicitly detected, explicitly manual, or explicitly unavailable.
+- Every disk returned within the documented 64-item cap is rendered; truncation is visible, no real array is arbitrarily sliced to two, and no fake free bay is shown.
+- PSU identity is explicitly manual or explicitly unavailable; no detected/guessed state is presented in this release.
 - Opening settings does not change header/dashboard geometry by more than 1 CSS px.
 - Maximized Full-HD Tauri at 100% passes the overflow, 12px type, 96px footer-gap, and 20%-blank-band thresholds. The 125% check is passed or explicitly identified as the only environment-blocked manual check.
 - Overlapping refreshes, stale expiry, NVIDIA absence/failure, ambiguous GPU matching, oversized/invalid output, and privacy redaction are covered by automated tests.
