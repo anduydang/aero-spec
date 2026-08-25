@@ -177,6 +177,7 @@ export function App() {
       <AiAdvisorModal 
         isOpen={isAiAdvisorOpen}
         telemetry={telemetry}
+        score={hardwareScore}
         lang={lang}
         onClose={() => {
           soundFx.playClick();

@@ -93,13 +93,13 @@ export const DeepInspectorDrawer: React.FC<DeepInspectorDrawerProps> = ({
             </button>
           </div>
 
-          {/* DEDICATED COMPONENT AI EVALUATION CARD */}
+          {/* Deterministic local component analysis */}
           <div className="dark:bg-gradient-to-br dark:from-indigo-950/40 dark:via-slate-850 dark:to-slate-900 bg-indigo-50 p-4 rounded-2xl border dark:border-indigo-500/40 border-indigo-200 shadow-md flex flex-col gap-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-indigo-500" />
                 <h3 className="font-extrabold text-xs dark:text-white text-slate-900">
-                  Gemini 3.7 Flash • Dedicated Component Verdict
+                  Local compatibility analysis
                 </h3>
               </div>
               <span className="text-xs font-mono font-extrabold px-2 py-0.5 dark:bg-indigo-950 dark:text-indigo-300 bg-indigo-100 text-indigo-800 border border-indigo-300 rounded shadow-sm">

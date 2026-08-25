@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Send, Bot, Globe, Key, Sparkles, RefreshCw, Cpu, Zap, ShieldCheck } from 'lucide-react';
-import type { HardwareTelemetryState, LanguageType } from '../types/hardware';
+import type { HardwareScore, HardwareTelemetryState, LanguageType } from '../types/hardware';
 import { soundFx } from '../utils/soundFx';
+import { buildAdvisorContext } from '../utils/advisorContext';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -16,6 +17,7 @@ interface Message {
 interface AiAdvisorModalProps {
   isOpen: boolean;
   telemetry: HardwareTelemetryState;
+  score: HardwareScore;
   lang: LanguageType;
   onClose: () => void;
 }
@@ -23,6 +25,7 @@ interface AiAdvisorModalProps {
 export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
   isOpen,
   telemetry,
+  score,
   lang,
   onClose
 }) => {
@@ -36,18 +39,19 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
   // Initialize initial welcome message
   useEffect(() => {
     if (messages.length === 0) {
+      const detectedContext = buildAdvisorContext(telemetry, score);
       setMessages([
         {
           id: 'welcome',
           sender: 'ai',
           text: lang === 'EN'
-            ? `Hello! I am your AeroSpec AI Hardware Upgrade Consultant. I have loaded your system telemetry (**${telemetry.hostName}** with ${telemetry.cpu.name}, ${telemetry.ram.totalGb}GB ${telemetry.ram.channelMode}, ${telemetry.motherboard.name}, ${telemetry.psu.name} ${telemetry.psu.ratedWattage}W).\n\nConnect your Gemini API Key using the button above to ask real-time upgrade questions and analyze market compatibility!`
-            : `Xin chào! Tôi là Trợ lý AI Tư Vấn Nâng Cấp Phần Cứng AeroSpec. Tôi đã nạp toàn bộ cấu hình máy của bạn (**${telemetry.hostName}**: CPU ${telemetry.cpu.name}, RAM ${telemetry.ram.totalGb}GB ${telemetry.ram.channelMode}, Mainboard ${telemetry.motherboard.name}, Nguồn ${telemetry.psu.name} ${telemetry.psu.ratedWattage}W).\n\nHãy kết nối Gemini API Key ở góc trên để bắt đầu trò chuyện trực tiếp với AI thật và tra cứu giá nâng cấp phần cứng!`,
+            ? `Hello! I am your AeroSpec hardware upgrade consultant. I will only use fields that AeroSpec actually detected.\n\n**Current context**\n\n\`\`\`text\n${detectedContext}\n\`\`\`\n\nConnect your Gemini API key to ask upgrade and compatibility questions.`
+            : `Xin chào! Tôi là trợ lý tư vấn nâng cấp phần cứng AeroSpec. Tôi chỉ dùng những trường mà AeroSpec thực sự phát hiện được.\n\n**Ngữ cảnh hiện tại**\n\n\`\`\`text\n${detectedContext}\n\`\`\`\n\nKết nối Gemini API key để hỏi về nâng cấp và tương thích.`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
     }
-  }, [lang, telemetry]);
+  }, [lang, messages.length, score, telemetry]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -65,12 +69,12 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
 
   const quickQuestions = lang === 'EN' ? [
     "What should I upgrade with a $100 budget?",
-    "Can my 260W power supply support a GTX 1650 or RTX 3050?",
+    "Which GPU upgrades are safe for my detected power and platform limits?",
     "Should I upgrade to 32GB RAM or add an NVMe SSD?",
     "What is the best low-power GPU for this PC?"
   ] : [
     "Có 2 triệu nâng gì cho máy này để chơi game mượt nhất?",
-    "Nguồn 260W này lắp được card đồ họa nào không cần nguồn phụ?",
+    "Card đồ họa nào an toàn với giới hạn nguồn và nền tảng đã phát hiện?",
     "Nên nâng RAM lên 32GB hay nâng thêm ổ SSD NVMe 500GB trước?",
     "Máy này có gắn được card RTX 3060 không và cần thay gì?"
   ];
@@ -110,19 +114,12 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
 
     setIsLoading(true);
 
-    const systemPrompt = `You are AeroSpec Pro AI - a senior PC hardware architecture & upgrade consultant.
-Current User Hardware Telemetry:
-- Host: ${telemetry.hostName}
-- CPU: ${telemetry.cpu.name} (${telemetry.cpu.cores}C/${telemetry.cpu.threads}T, Clock: ${telemetry.cpu.avgClockMhz}MHz)
-- RAM: ${telemetry.ram.totalGb}GB ${telemetry.ram.channelMode} (${telemetry.ram.config}, Timings: ${telemetry.ram.primaryTimings})
-- Motherboard: ${telemetry.motherboard.name} (Chipset: ${telemetry.motherboard.chipset}, BIOS: ${telemetry.motherboard.biosVersion})
-- GPU: ${telemetry.gpu.name} (${telemetry.gpu.vram}, ${telemetry.gpu.isDiscrete ? 'Discrete' : 'Integrated iGPU'})
-- Primary Storage: ${telemetry.storage.m2_1.name} (${telemetry.storage.m2_1.speedRead})
-- Secondary Storage: ${telemetry.storage.m2_2.name}
-- Power Supply (PSU): ${telemetry.psu.name} (${telemetry.psu.ratedWattage}W Rated, Current Load: ${telemetry.psu.currentLoadW}W)
+    const systemPrompt = `You are AeroSpec Pro AI, a senior PC hardware architecture and upgrade consultant.
+Current AeroSpec context:
+${buildAdvisorContext(telemetry, score)}
 
 Answer the user question in ${lang === 'VI' ? 'Vietnamese' : 'English'}.
-Analyze hardware compatibility constraints (e.g. Dell 260W PSU lacks 8-pin PCIe power cables, PCIe slot 75W power limit, LGA 1151v2 socket limits, DDR4/DDR5 DIMM slots) and provide concrete, actionable upgrade recommendations with estimated prices (in VND or USD). Format your response with clear Markdown headers, bold highlights, bullet points, and pricing comparison tables where helpful.`;
+Never infer an exact PSU, sensor reading, connector, motherboard feature, or component that is absent from the context. Clearly identify simulated context. Explain uncertainty before making compatibility claims. Provide concrete, actionable recommendations and label prices as estimates. Format the response with clear Markdown headers, highlights, bullets, and comparison tables where useful.`;
 
     // Cascade top flagship models first (Gemini 3.7 Flash -> 3.5 Flash -> 3.1 Flash Lite -> 3.5 Flash Lite -> Flash Latest)
     const candidateModels = [
@@ -130,8 +127,7 @@ Analyze hardware compatibility constraints (e.g. Dell 260W PSU lacks 8-pin PCIe 
       'gemini-3.5-flash',
       'gemini-3.1-flash-lite',
       'gemini-3.5-flash-lite',
-      'gemini-flash-latest',
-      'gemini-2.0-flash'
+      'gemini-flash-latest'
     ];
     let replyText = '';
     let usedModel = '';
@@ -169,8 +165,8 @@ Analyze hardware compatibility constraints (e.g. Dell 260W PSU lacks 8-pin PCIe 
           lastErrorMsg = `[${model}] ${data.error.message}`;
           continue;
         }
-      } catch (err: any) {
-        lastErrorMsg = err?.message || 'Network error';
+      } catch (err: unknown) {
+        lastErrorMsg = err instanceof Error ? err.message : 'Network error';
       }
     }
 
@@ -242,7 +238,7 @@ Analyze hardware compatibility constraints (e.g. Dell 260W PSU lacks 8-pin PCIe 
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 font-mono mt-0.5">
-                  Target Machine: <strong className="text-slate-200">{telemetry.cpu.name}</strong> • {telemetry.ram.totalGb}GB • {telemetry.psu.ratedWattage}W PSU
+                  {telemetry.telemetry.mode === 'simulated' ? 'Simulated profile' : 'Live hardware'} • {score.score === null ? 'Score unavailable' : `Score ${score.score}/100`}
                 </p>
               </div>
             </div>
@@ -303,17 +299,22 @@ Analyze hardware compatibility constraints (e.g. Dell 260W PSU lacks 8-pin PCIe 
           {/* Live Machine Specs Summary Bar */}
           <div className="px-5 py-2 bg-slate-950/70 border-b border-slate-800/80 flex flex-wrap items-center justify-between text-xs font-mono text-slate-400 gap-2">
             <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1.5 text-slate-300">
+              {telemetry.telemetry.capabilities.cpuIdentity && <span className="flex items-center gap-1.5 text-slate-300">
                 <Cpu className="w-3.5 h-3.5 text-sky-400" /> {telemetry.cpu.name}
-              </span>
-              <span className="flex items-center gap-1.5 text-slate-300">
+              </span>}
+              {telemetry.telemetry.capabilities.psu && <span className="flex items-center gap-1.5 text-slate-300">
                 <Zap className="w-3.5 h-3.5 text-amber-400" /> PSU: {telemetry.psu.ratedWattage}W ({telemetry.psu.rating})
-              </span>
-              <span className="flex items-center gap-1.5 text-slate-300">
+              </span>}
+              {telemetry.telemetry.capabilities.motherboardIdentity && <span className="flex items-center gap-1.5 text-slate-300">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Main: {telemetry.motherboard.name}
-              </span>
+              </span>}
+              {!telemetry.telemetry.capabilities.cpuIdentity && !telemetry.telemetry.capabilities.motherboardIdentity && (
+                <span className="text-amber-300">No native component identity available in browser preview</span>
+              )}
             </div>
-            <span className="text-[11px] text-slate-500">Live Telemetry Context Injected</span>
+            <span className="text-[11px] text-slate-500">
+              {telemetry.telemetry.mode === 'simulated' ? 'Simulated context' : 'Capability-filtered live context'}
+            </span>
           </div>
 
           {/* Messages Stream Body */}

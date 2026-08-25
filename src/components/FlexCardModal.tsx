@@ -221,7 +221,7 @@ export const FlexCardModal: React.FC<FlexCardModalProps> = ({
                 <span className="text-sky-400 font-bold shrink-0 ml-2">{telemetry.storage.m2_1.speedRead}</span>
               </div>
 
-              {/* Gemini AI Verdict Highlight */}
+              {/* Local compatibility highlight */}
               <div className="bg-gradient-to-r from-indigo-950/60 via-slate-900 to-sky-950/60 p-3 rounded-xl border border-indigo-500/30 flex items-start gap-2.5">
                 <ShieldCheck className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
                 <div className="text-xs leading-relaxed text-slate-300">

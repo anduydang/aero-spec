@@ -44,7 +44,7 @@ export const CopilotFooter: React.FC<CopilotFooterProps> = ({
               </h3>
               <span className="px-1.5 py-0.2 text-[10px] font-mono font-extrabold theme-badge-primary rounded-full flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                gemini-3.7-flash (Hardware Engine)
+                Local compatibility analysis
               </span>
             </div>
             <p className="text-[11px] theme-muted font-medium leading-tight mt-0.5">

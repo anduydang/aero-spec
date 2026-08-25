@@ -7,6 +7,7 @@ export function getDynamicInspectorItem(
   _persona: PersonaType
 ): InspectorItem {
   const { cpu, ram, motherboard, storage, gpu, cooler, psu, network, peripherals } = telemetry;
+  const capabilities = telemetry.telemetry.capabilities;
   const isIntel = cpu.name.toLowerCase().includes('intel');
 
   switch (id) {
@@ -16,7 +17,9 @@ export function getDynamicInspectorItem(
         title: cpu.name,
         badge: isIntel ? 'INTEL COFFEE LAKE • 14NM' : 'AMD ZEN 4 • 5NM TSMC',
         icon: 'cpu',
-        aiScore: `SILICON SCORE: ${cpu.tempC < 70 ? '98/100' : '85/100'}`,
+        aiScore: capabilities.cpuSensors
+          ? (cpu.tempC < 70 ? 'THERMALS: WITHIN RANGE' : 'THERMALS: REVIEW')
+          : 'IDENTITY: DETECTED',
         aiText_EN: isIntel
           ? `Intel Core i5-8400 (6C/6T) operating at ${cpu.avgClockMhz} MHz with ${cpu.vcoreV}V VCore. Thermal output is well-managed at ${cpu.tempC}°C under ${cpu.powerW}W load. Hardware registers show zero thermal throttling.`
           : `AMD Ryzen 7 7800X3D running with Curve Optimizer ${cpu.curveOptimizer} at ${cpu.vcoreV}V VCore. 96MB 3D V-Cache eliminates memory latency penalties for both gaming and code compilation.`,
@@ -48,7 +51,7 @@ export function getDynamicInspectorItem(
         title: `${ram.totalGb}GB ${ram.channelMode}`,
         badge: ram.isSingleChannel ? 'SINGLE-CHANNEL WARNING' : 'DUAL-CHANNEL ACTIVE',
         icon: 'layers',
-        aiScore: ram.isSingleChannel ? 'MEMORY BUS: 68/100 (HALVED)' : 'MEMORY BUS: 99/100 (OPTIMAL)',
+        aiScore: ram.isSingleChannel ? 'CHANNEL MODE: BOTTLENECK' : 'CHANNEL MODE: CONFIGURED',
         aiText_EN: ram.isSingleChannel
           ? `Single-channel configuration detected. Memory operates on a single 32/64-bit channel, reducing memory throughput by 50% and causing ~18% CPU IPC loss in memory-bound tasks. Recommend adding a 2nd stick.`
           : `Dual-channel configuration confirmed (${ram.config}). Operating stably at ${ram.frequencyMhz} MHz with timings ${ram.primaryTimings}. Full bus bandwidth available to CPU and integrated graphics.`,
@@ -76,7 +79,7 @@ export function getDynamicInspectorItem(
         title: motherboard.name,
         badge: `BIOS: ${motherboard.biosVersion}`,
         icon: 'circuit-board',
-        aiScore: 'FIRMWARE & BOARD: 96/100',
+        aiScore: 'BOARD IDENTITY: DETECTED',
         aiText_EN: `Motherboard ${motherboard.name} operating with BIOS version ${motherboard.biosVersion} (Release: ${motherboard.biosDate}). Multi-layer PCB traces and VRM power distribution operate stably.`,
         aiText_VI: `Bo mạch chủ ${motherboard.name} đang chạy phiên bản BIOS ${motherboard.biosVersion} (Ngày phát hành: ${motherboard.biosDate}). Đường mạch PCB và hệ thống cấp điện VRM duy trì tính ổn định cao.`,
         specs: [
@@ -100,7 +103,9 @@ export function getDynamicInspectorItem(
         title: `Voltage Regulator Module (${motherboard.vrm.phases})`,
         badge: `${motherboard.vrm.tempC}°C • LOAD: ${motherboard.vrm.mosfetLoadPct}%`,
         icon: 'shield',
-        aiScore: motherboard.vrm.tempC < 65 ? 'VRM EFFICIENCY: 98/100' : 'VRM EFFICIENCY: 82/100',
+        aiScore: capabilities.motherboardSensors
+          ? (motherboard.vrm.tempC < 65 ? 'VRM THERMALS: WITHIN RANGE' : 'VRM THERMALS: REVIEW')
+          : 'VRM SENSORS: UNAVAILABLE',
         aiText_EN: `Power delivery VRM operating at ${motherboard.vrm.tempC}°C under ${motherboard.vrm.mosfetLoadPct}% load. Power stages supply clean, ripple-free VCore current to the processor.`,
         aiText_VI: `Khối cấp nguồn VRM đang hoạt động ở nhiệt độ ${motherboard.vrm.tempC}°C với mức tải ${motherboard.vrm.mosfetLoadPct}%. Dàn MOSFET cung cấp dòng điện ổn định, triệt tiêu xung nhiễu điện áp cho CPU.`,
         specs: [
@@ -122,7 +127,7 @@ export function getDynamicInspectorItem(
         title: gpu.name,
         badge: gpu.isDiscrete ? 'DISCRETE PCIE GPU' : 'INTEGRATED GRAPHICS (iGPU)',
         icon: 'monitor',
-        aiScore: gpu.isDiscrete ? 'GPU POWER: 97/100' : 'DISPLAY ENGINE: 72/100',
+        aiScore: gpu.isDiscrete ? 'GPU TYPE: DISCRETE' : 'GPU TYPE: INTEGRATED',
         aiText_EN: gpu.isDiscrete
           ? `${gpu.name} with ${gpu.vram} operating on ${gpu.pcieLink}. ReBAR is ${gpu.rebarActive ? 'Active' : 'Disabled'}. Excellent 1440p/4K rendering and gaming throughput.`
           : `${gpu.name} active for display acceleration and hardware video decoding via ${gpu.pcieLink}. Uses system memory for frame buffer.`,
@@ -199,7 +204,7 @@ export function getDynamicInspectorItem(
         title: cooler.name,
         badge: `${cooler.type} • ${cooler.coolantTempC}°C`,
         icon: 'fan',
-        aiScore: 'THERMAL HEADROOM: 98/100',
+        aiScore: capabilities.cpuSensors ? 'COOLING DATA: AVAILABLE' : 'COOLING DATA: UNAVAILABLE',
         aiText_EN: `${cooler.name} maintains CPU operating temperatures well below thermal limits. Fan speed currently at ${cooler.fanRpm} RPM for quiet operation.`,
         aiText_VI: `Hệ thống làm mát ${cooler.name} giữ nhiệt độ CPU luôn dưới ngưỡng an toàn. Tốc độ quạt đang ở mức ${cooler.fanRpm} RPM đảm bảo độ êm ái khi làm việc.`,
         specs: [
@@ -220,7 +225,7 @@ export function getDynamicInspectorItem(
         title: psu.name,
         badge: `${psu.rating} • ${psu.ratedWattage}W`,
         icon: 'zap',
-        aiScore: 'POWER DELIVERY: 99/100',
+        aiScore: capabilities.psu ? 'PSU DATA: AVAILABLE' : 'PSU DATA: UNAVAILABLE',
         aiText_EN: `Power supply operating at ${psu.currentLoadW}W (${psu.loadPct.toFixed(1)}% load), within its peak efficiency band. +12V rail voltage holds rock-solid at ${psu.rail12v.toFixed(2)}V.`,
         aiText_VI: `Bộ nguồn đang gánh tải ${psu.currentLoadW}W (${psu.loadPct.toFixed(1)}% tải định mức), nằm trong vùng hiệu suất tối ưu. Đường điện +12V duy trì ổn định tuyệt đối ở mức ${psu.rail12v.toFixed(2)}V.`,
         specs: [
@@ -242,7 +247,7 @@ export function getDynamicInspectorItem(
         title: network.name,
         badge: `${network.linkSpeedMbps.toLocaleString()} Mbps • ${network.pingMs}ms PING`,
         icon: 'wifi',
-        aiScore: 'NETWORK LATENCY: 99/100',
+        aiScore: capabilities.network ? 'NETWORK DATA: AVAILABLE' : 'NETWORK DATA: UNAVAILABLE',
         aiText_EN: `${network.name} connected at ${network.linkSpeedMbps.toLocaleString()} Mbps on ${network.band} with ${network.pingMs}ms ping. Packet transmission is lossless.`,
         aiText_VI: `Card mạng ${network.name} kết nối ở tốc độ ${network.linkSpeedMbps.toLocaleString()} Mbps băng tần ${network.band} với độ trễ ping ${network.pingMs}ms. Không có hiện tượng mất gói tin.`,
         specs: [
