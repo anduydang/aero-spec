@@ -124,18 +124,30 @@ Current User Hardware Telemetry:
 Answer the user question in ${lang === 'VI' ? 'Vietnamese' : 'English'}.
 Analyze hardware compatibility constraints (e.g. Dell 260W PSU lacks 8-pin PCIe power cables, PCIe slot 75W power limit, LGA 1151v2 socket limits, DDR4/DDR5 DIMM slots) and provide concrete, actionable upgrade recommendations with estimated prices (in VND or USD).`;
 
-    // Cascade candidate active models
-    const candidateModels = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-flash-latest', 'gemini-2.0-flash'];
+    // Cascade top flagship models first (Gemini 3.7 Flash -> 3.5 Flash -> 3.1 Flash Lite -> 3.5 Flash Lite -> Flash Latest)
+    const candidateModels = [
+      'gemini-3.7-flash',
+      'gemini-3.5-flash',
+      'gemini-3.1-flash-lite',
+      'gemini-3.5-flash-lite',
+      'gemini-flash-latest',
+      'gemini-2.0-flash'
+    ];
     let replyText = '';
+    let usedModel = '';
     let success = false;
     let lastErrorMsg = '';
 
     for (const model of candidateModels) {
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 18000);
+
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
           body: JSON.stringify({
             contents: [
               {
@@ -146,14 +158,15 @@ Analyze hardware compatibility constraints (e.g. Dell 260W PSU lacks 8-pin PCIe 
           })
         });
 
+        clearTimeout(timeoutId);
         const data = await response.json();
         if (response.ok && data?.candidates?.[0]?.content?.parts?.[0]?.text) {
           replyText = data.candidates[0].content.parts[0].text;
+          usedModel = model;
           success = true;
           break;
         } else if (data?.error?.message) {
           lastErrorMsg = `[${model}] ${data.error.message}`;
-          // If rate limit 429 or quota exceeded, try next model
           continue;
         }
       } catch (err: any) {
@@ -164,13 +177,14 @@ Analyze hardware compatibility constraints (e.g. Dell 260W PSU lacks 8-pin PCIe 
     setIsLoading(false);
 
     if (success && replyText) {
+      const modelDisplayName = usedModel.replace('gemini-', 'Gemini ').replace('-flash', ' Flash').replace('-lite', ' Lite');
       setMessages(prev => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           sender: 'ai',
           text: replyText,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          timestamp: `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • ${modelDisplayName}`
         }
       ]);
       soundFx.playChime();
