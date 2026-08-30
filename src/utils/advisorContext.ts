@@ -15,9 +15,6 @@ export function buildAdvisorContext(
       : `Hardware score: ${score.score}/100 (Grade ${score.grade}, ${score.confidence} confidence)`,
   ]
 
-  if (telemetry.hostName !== 'This PC' && known(telemetry.hostName)) {
-    lines.push(`Host: ${telemetry.hostName}`)
-  }
   if (capabilities.cpuIdentity) {
     const topology = telemetry.cpu.cores > 0 && telemetry.cpu.threads > 0
       ? ` (${telemetry.cpu.cores}C/${telemetry.cpu.threads}T)`
@@ -54,9 +51,13 @@ export function buildAdvisorContext(
     lines.push(`GPU temperature: ${telemetry.gpu.tempC}°C; power ${telemetry.gpu.powerW}W`)
   }
   if (capabilities.storageIdentity) {
-    const drives = [telemetry.storage.m2_1, telemetry.storage.m2_2]
-      .filter((drive) => drive.isPopulated && known(drive.name))
-      .map((drive) => known(drive.speedRead) ? `${drive.name} (${drive.speedRead})` : drive.name)
+    const drives = telemetry.storage.devices?.length
+      ? telemetry.storage.devices
+        .filter((drive) => known(drive.name))
+        .map((drive) => `${drive.name} (${drive.capacityLabel})`)
+      : [telemetry.storage.m2_1, telemetry.storage.m2_2]
+        .filter((drive) => drive.isPopulated && known(drive.name))
+        .map((drive) => known(drive.speedRead) ? `${drive.name} (${drive.speedRead})` : drive.name)
     if (drives.length > 0) lines.push(`Storage: ${drives.join('; ')}`)
   }
   if (capabilities.storageSensors && telemetry.storage.m2_1.isPopulated) {

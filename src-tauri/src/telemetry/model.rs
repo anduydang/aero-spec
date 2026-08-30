@@ -100,6 +100,13 @@ pub struct PnpDevice {
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
+pub struct ProviderProbeError {
+    pub scope: String,
+    pub code: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct WindowsInventory {
     pub system: Option<SystemDevice>,
     pub cpu: Option<CpuDevice>,
@@ -114,6 +121,8 @@ pub struct WindowsInventory {
     pub networks: Vec<NetworkDevice>,
     #[serde(default, deserialize_with = "deserialize_one_or_many")]
     pub pnp_devices: Vec<PnpDevice>,
+    #[serde(default, deserialize_with = "deserialize_one_or_many")]
+    pub errors: Vec<ProviderProbeError>,
 }
 
 fn deserialize_one_or_many<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>

@@ -4,14 +4,14 @@ import { SiliconMetrics } from './components/SiliconMetrics';
 import { MotherboardSchematic } from './components/MotherboardSchematic';
 import { PsuAndPeripherals } from './components/PsuAndPeripherals';
 import { CopilotFooter } from './components/CopilotFooter';
-import type { LanguageType, PersonaType, RigProfileType, ThemeType, HardwareTelemetryState, NativeHardwareTelemetryPayload } from './types/hardware';
+import type { LanguageType, PersonaType, RigProfileType, ThemeType } from './types/hardware';
 import { fullRigTelemetry, missingRigTelemetry } from './data/mockData';
-import { createLiveTelemetryBaseline, mergeNativeTelemetry } from './data/liveTelemetry';
 import { getDynamicInspectorItem } from './data/inspectorGenerator';
 import { i18nData } from './data/i18nData';
 import { soundFx } from './utils/soundFx';
 import { calculateHardwareSynergyScore } from './utils/scoreCalculator';
 import { resolveStoredTheme } from './theme/themeConfig';
+import { useNativeTelemetry } from './hooks/useNativeTelemetry';
 
 const DeepInspectorDrawer = lazy(() => import('./components/DeepInspectorDrawer').then((module) => ({ default: module.DeepInspectorDrawer })));
 const FlexCardModal = lazy(() => import('./components/FlexCardModal').then((module) => ({ default: module.FlexCardModal })));
@@ -25,43 +25,7 @@ export function App() {
   const [activeInspectorId, setActiveInspectorId] = useState<string | null>(null);
   const [isFlexCardOpen, setIsFlexCardOpen] = useState<boolean>(false);
   const [isAiAdvisorOpen, setIsAiAdvisorOpen] = useState<boolean>(false);
-  const [liveData, setLiveData] = useState<HardwareTelemetryState>(() => createLiveTelemetryBaseline());
-
-  // Attempt to invoke native Tauri hardware detection if running in Tauri
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchNativeTelemetry() {
-      const isTauri = '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
-      if (!isTauri) {
-        setLiveData(prev => ({
-          ...prev,
-          telemetry: { ...prev.telemetry, status: 'unavailable' },
-        }));
-        return;
-      }
-
-      try {
-        const { invoke } = await import('@tauri-apps/api/core');
-        const response = await invoke<NativeHardwareTelemetryPayload>('get_live_hardware_telemetry');
-        if (!cancelled) setLiveData(mergeNativeTelemetry(response));
-      } catch (err) {
-        console.warn('Native Tauri hardware probe unavailable:', err);
-        if (!cancelled) {
-          setLiveData(prev => ({
-            ...prev,
-            telemetry: {
-              ...prev.telemetry,
-              status: 'error',
-              error: err instanceof Error ? err.message : String(err),
-            },
-          }));
-        }
-      }
-    }
-    fetchNativeTelemetry();
-    return () => { cancelled = true; };
-  }, []);
+  const { telemetry: liveData, refreshStatic } = useNativeTelemetry();
 
   // Update Theme Classes on Root & LocalStorage
   useEffect(() => {
@@ -113,6 +77,7 @@ export function App() {
         onSelectRig={setRigProfile}
         onOpenFlexCard={() => setIsFlexCardOpen(true)}
         onOpenAiAdvisor={() => setIsAiAdvisorOpen(true)}
+        onRefreshHardware={() => { void refreshStatic() }}
       />
 
       {/* 3-Column Core Telemetry Dashboard */}

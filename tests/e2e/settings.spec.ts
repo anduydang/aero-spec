@@ -8,7 +8,7 @@ test('aligns product version and manages the locally stored Gemini key', async (
   })
   await page.goto('/')
 
-  await expect(page.getByText('v2.6.0', { exact: true })).toBeVisible()
+  await expect(page.getByText('v2.6.1', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'AI Advisor' }).click()
   await page.getByRole('button', { name: 'Connect API Key' }).click()
 

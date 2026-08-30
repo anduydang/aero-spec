@@ -1,6 +1,6 @@
 [package]
 name = "aero-spec"
-version = "2.6.0"
+version = "2.6.1"
 description = "AeroSpec Pro - Neural Hardware Architecture Studio"
 authors = ["AeroSpec Team"]
 edition = "2021"
@@ -20,3 +20,6 @@ log = "0.4"
 tauri = { version = "2.11.3", features = [] }
 tauri-plugin-log = "2"
 sysinfo = "0.33"
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Cryptography", "Win32_Security_Cryptography_Catalog", "Win32_Security_Cryptography_Sip", "Win32_Security_WinTrust", "Win32_System_Com", "Win32_System_JobObjects", "Win32_System_SystemInformation", "Win32_System_Threading", "Win32_UI_Shell"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }

@@ -266,6 +266,35 @@ export function getDynamicInspectorItem(
     }
 
     default: {
+      if (id.startsWith('storage:')) {
+        const foundDisk = storage.devices?.find((disk) => `storage:${disk.localId}` === id)
+        if (foundDisk) {
+          const operationalStatus = foundDisk.operationalStatus.length > 0
+            ? foundDisk.operationalStatus.join(', ')
+            : 'Not reported'
+          return {
+            id,
+            title: foundDisk.name,
+            badge: `${foundDisk.capacityLabel} • ${foundDisk.busType}`,
+            icon: 'hard-drive',
+            aiScore: 'STORAGE INVENTORY: DETECTED',
+            aiText_EN: `${foundDisk.name} is detected by Windows as a ${foundDisk.capacityLabel} ${foundDisk.mediaType.toUpperCase()} drive on ${foundDisk.busType}. Health is reported as ${foundDisk.health}.`,
+            aiText_VI: `${foundDisk.name} được Windows nhận diện là ổ ${foundDisk.mediaType.toUpperCase()} dung lượng ${foundDisk.capacityLabel}, giao tiếp ${foundDisk.busType}. Trạng thái sức khỏe được báo là ${foundDisk.health}.`,
+            specs: [
+              { label: 'Drive Model', val: foundDisk.name },
+              { label: 'Capacity', val: foundDisk.capacityLabel },
+              { label: 'Bus Interface', val: foundDisk.busType },
+              { label: 'Media Type', val: foundDisk.mediaType.toUpperCase() },
+              { label: 'Health', val: foundDisk.health },
+              { label: 'Operational Status', val: operationalStatus },
+              { label: 'Data Source', val: foundDisk.source },
+            ],
+            arch_EN: 'Windows storage inventory data. Performance and temperature are omitted when the operating system does not report them.',
+            arch_VI: 'Dữ liệu kiểm kê ổ đĩa từ Windows. Hiệu năng và nhiệt độ được lược bỏ khi hệ điều hành không cung cấp.',
+          }
+        }
+      }
+
       // Check peripherals
       const foundPeri = peripherals.find(p => p.id === id);
       if (foundPeri) {

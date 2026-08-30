@@ -10,8 +10,9 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
 name = "aero-spec"
-version = "2.6.0"
+version = "2.6.1"
 dependencies = [
+ "chrono",
  "log",
  "serde",
  "serde_json",
@@ -19,6 +20,8 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-log",
+ "uuid",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -346,8 +349,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aa79e62e7697b8e29b513a68abacf485adcd1fe8284a4316c5ae868e6633327"
 dependencies = [
  "iana-time-zone",
+ "js-sys",
  "num-traits",
  "serde",
+ "wasm-bindgen",
  "windows-link 0.2.1",
 ]
 

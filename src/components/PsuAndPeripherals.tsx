@@ -1,147 +1,64 @@
-import React from 'react';
-import { Zap, Wifi, Plug2, Tv, Mouse, Keyboard, Headphones } from 'lucide-react';
-import type { HardwareTelemetryState } from '../types/hardware';
-import { motion } from 'framer-motion';
+import type { ReactNode } from 'react'
+import { Headphones, Keyboard, Mouse, Plug2, Tv, Wifi, Zap } from 'lucide-react'
+import type { HardwareTelemetryState } from '../types/hardware'
+import { usePsuProfile } from '../hooks/usePsuProfile'
 
-interface PsuAndPeripheralsProps {
-  telemetry: HardwareTelemetryState;
-  onInspect: (id: string) => void;
-  peripheralsTitle: string;
+interface Props { telemetry: HardwareTelemetryState; onInspect: (id: string) => void; peripheralsTitle: string }
+
+const speedLabel = (value?: number) => !value
+  ? 'Link speed unavailable'
+  : value >= 1_000_000_000
+    ? `${Math.round(value / 100_000_000) / 10} Gbps`
+    : `${Math.round(value / 1_000_000)} Mbps`
+
+const deviceIcon = (icon: string): ReactNode => {
+  if (icon === 'tv') return <Tv className="w-3.5 h-3.5" />
+  if (icon === 'mouse') return <Mouse className="w-3.5 h-3.5" />
+  if (icon === 'keyboard') return <Keyboard className="w-3.5 h-3.5" />
+  if (icon === 'headphones') return <Headphones className="w-3.5 h-3.5" />
+  return <Plug2 className="w-3.5 h-3.5" />
 }
 
-export const PsuAndPeripherals: React.FC<PsuAndPeripheralsProps> = ({
-  telemetry,
-  onInspect,
-  peripheralsTitle
-}) => {
-  const { psu, network, peripherals } = telemetry;
-  const { capabilities } = telemetry.telemetry;
+export function PsuAndPeripherals({ telemetry, onInspect, peripheralsTitle }: Props) {
+  const { profile } = usePsuProfile()
+  const live = telemetry.telemetry.mode === 'live'
+  const networks = telemetry.networks?.length ? telemetry.networks : telemetry.telemetry.capabilities.network ? [{
+    localId: 'network:legacy', name: telemetry.network.name, interfaceName: telemetry.network.lanName,
+    linkSpeedBps: telemetry.network.linkSpeedMbps * 1_000_000, mediaType: telemetry.network.band,
+    connected: true, source: live ? 'windows' as const : 'simulator' as const,
+    status: 'ok' as const, diagnostics: [],
+  }] : []
+  const manualPsu = live ? profile : null
+  const showSimulatedPsu = !live && telemetry.telemetry.capabilities.psu
+  const truncationNotices = (telemetry.telemetry.diagnostics ?? []).filter((item) => item.code === 'ITEM_LIMIT_EXCEEDED')
 
-  if (!capabilities.psu && !capabilities.network && !capabilities.peripherals) {
-    return (
-      <section className="order-3">
-        <div className="studio-card rounded-2xl p-5 flex flex-col gap-2 min-h-40 justify-center">
-          <Plug2 className="w-5 h-5 theme-primary-text" />
-          <h2 className="text-sm font-black theme-title">Power & connected devices unavailable</h2>
-          <p className="text-xs leading-relaxed theme-muted">
-            Windows WMI does not provide reliable PSU, ping, or peripheral telemetry. AeroSpec leaves these fields empty.
-          </p>
-        </div>
-      </section>
-    );
-  }
-
-  const renderIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'tv': return <Tv className="w-3.5 h-3.5" />;
-      case 'mouse': return <Mouse className="w-3.5 h-3.5" />;
-      case 'keyboard': return <Keyboard className="w-3.5 h-3.5" />;
-      case 'headphones': return <Headphones className="w-3.5 h-3.5" />;
-      default: return <Plug2 className="w-3.5 h-3.5" />;
-    }
-  };
-
-  return (
-    <section className="order-3 flex flex-col gap-3">
-      
-      {/* Power Supply Unit (PSU) Card */}
-      <motion.div 
-        whileHover={{ y: -1 }}
-        onClick={() => onInspect('psu')} 
-        className="studio-card rounded-2xl p-3 flex flex-col gap-2 cursor-pointer group"
-      >
-        <div className="flex items-center justify-between border-b border-black/5 dark:border-slate-800 pb-1.5">
-          <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 rounded-md bg-amber-500/15 flex items-center justify-center text-amber-600 dark:text-amber-400">
-              <Zap className="w-3.5 h-3.5" />
-            </div>
-            <span className="font-bold text-xs theme-title">Power Delivery</span>
-          </div>
-          <span className="px-1.5 py-0.2 text-[9px] font-mono font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 rounded">
-            {psu.rating} • {psu.ratedWattage}W
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between font-mono text-xs">
-          <div className="min-w-0">
-            <h4 className="font-bold theme-title text-xs truncate">{psu.name}</h4>
-            <span className="text-[10px] theme-muted">Load: {psu.currentLoadW}W ({psu.loadPct.toFixed(1)}%)</span>
-          </div>
-          <div className="text-right shrink-0">
-            <span className="font-extrabold text-amber-600 dark:text-amber-400">+12V: {psu.rail12v.toFixed(2)}V</span>
-            <span className="block text-[9px] text-emerald-600 dark:text-emerald-400 font-bold">Zero-RPM</span>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Network Interface Card */}
-      <motion.div 
-        whileHover={{ y: -1 }}
-        onClick={() => onInspect('network')} 
-        className="studio-card rounded-2xl p-3 flex flex-col gap-2 cursor-pointer group"
-      >
-        <div className="flex items-center justify-between border-b border-black/5 dark:border-slate-800 pb-1.5">
-          <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 rounded-md bg-emerald-500/15 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-              <Wifi className="w-3.5 h-3.5" />
-            </div>
-            <span className="font-bold text-xs theme-title">Network Interface</span>
-          </div>
-          <span className="px-1.5 py-0.2 text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 rounded">
-            Wi-Fi 6E
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between font-mono text-xs">
-          <div className="min-w-0">
-            <h4 className="font-bold theme-title text-xs truncate">{network.name}</h4>
-            <span className="text-[10px] theme-muted">{network.linkSpeedMbps.toLocaleString()} Mbps • {network.band}</span>
-          </div>
-          <div className="text-right shrink-0">
-            <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{network.pingMs} ms</span>
-            <span className="block text-[9px] theme-muted">Ping</span>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Connected Peripherals Group */}
-      <div className="studio-card rounded-2xl p-3 flex flex-col gap-2 flex-1">
-        <div className="flex items-center justify-between border-b border-black/5 dark:border-slate-800 pb-1.5">
-          <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 rounded-md theme-badge-primary flex items-center justify-center">
-              <Plug2 className="w-3.5 h-3.5" />
-            </div>
-            <span className="font-bold text-xs theme-title">{peripheralsTitle}</span>
-          </div>
-          <span className="px-1.5 py-0.2 text-[9px] font-mono font-bold theme-badge-primary rounded">
-            {peripherals.length} Devices
-          </span>
-        </div>
-
-        {/* Peripherals List */}
-        <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[220px] 2xl:max-h-[280px] pr-1">
-          {peripherals.map((p) => (
-            <motion.div
-              key={p.id}
-              whileHover={{ x: 2 }}
-              onClick={() => onInspect(p.id)}
-              className="theme-chip-box p-2 rounded-xl tactile-chip flex items-center justify-between gap-2 cursor-pointer group"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-5 h-5 rounded-md theme-badge-primary flex items-center justify-center shrink-0">
-                  {renderIcon(p.icon)}
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-[11px] font-bold theme-title group-hover:theme-primary-text truncate">{p.name}</h4>
-                  <p className="text-[9px] font-mono theme-muted truncate">{p.detail}</p>
-                </div>
-              </div>
-              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-extrabold shrink-0 text-right">{p.spec}</span>
-            </motion.div>
-          ))}
-        </div>
+  return <section className="order-3 flex flex-col gap-3 min-w-0">
+    <div className="studio-card rounded-2xl p-3 flex flex-col gap-2">
+      <div className="flex items-center justify-between border-b border-black/5 dark:border-slate-800 pb-1.5">
+        <div className="flex items-center gap-1.5"><span className="w-6 h-6 rounded-md bg-amber-500/15 flex items-center justify-center text-amber-600"><Zap className="w-3.5 h-3.5" /></span><span className="font-bold text-xs theme-title">Power Delivery</span></div>
+        {manualPsu && <span className="px-1.5 py-0.5 text-[10px] font-bold rounded theme-badge-primary">Manual</span>}
+        {showSimulatedPsu && <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-500/15 text-amber-600">Simulator</span>}
       </div>
+      {manualPsu ? <div><h4 className="font-bold theme-title text-xs break-words">{manualPsu.brandModel || 'Manual PSU'}</h4><p className="text-[11px] theme-muted mt-1">{[manualPsu.ratedWattage && `${manualPsu.ratedWattage}W`, manualPsu.efficiency].filter(Boolean).join(' · ') || 'Manual details only'}</p>{manualPsu.note && <p className="text-[11px] theme-muted mt-1">{manualPsu.note}</p>}</div>
+        : showSimulatedPsu ? <button type="button" onClick={() => onInspect('psu')} className="text-left"><h4 className="font-bold theme-title text-xs">{telemetry.psu.name}</h4><p className="text-[11px] theme-muted mt-1">{telemetry.psu.rating} · {telemetry.psu.ratedWattage}W · simulated sensors</p></button>
+          : <div><h4 className="font-bold theme-title text-xs">PSU not detected</h4><p className="text-[11px] theme-muted mt-1">Windows does not expose reliable PSU identity. Add an optional Manual PSU profile in Settings.</p></div>}
+    </div>
 
-    </section>
-  );
-};
+    <div className="studio-card rounded-2xl p-3 flex flex-col gap-2">
+      <div className="flex items-center justify-between border-b border-black/5 dark:border-slate-800 pb-1.5"><div className="flex items-center gap-1.5"><span className="w-6 h-6 rounded-md bg-emerald-500/15 flex items-center justify-center text-emerald-600"><Wifi className="w-3.5 h-3.5" /></span><span className="font-bold text-xs theme-title">Network Interfaces</span></div><span className="text-[10px] font-mono font-bold theme-muted">{networks.length}</span></div>
+      <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1">
+        {networks.length === 0 && <p className="text-[11px] theme-muted">No physical network adapter was reported.</p>}
+        {networks.map((network) => <div key={network.localId} className="theme-chip-box p-2 rounded-xl flex items-center justify-between gap-2 min-w-0"><div className="min-w-0"><h4 className="text-[11px] font-bold theme-title break-words">{network.name}</h4><p className="text-[10px] font-mono theme-muted truncate">{network.interfaceName || network.mediaType || 'Windows network adapter'}</p></div><div className="text-right shrink-0"><span className="text-[10px] font-bold theme-primary-text">{speedLabel(network.linkSpeedBps)}</span><span className={`block text-[9px] font-bold ${network.connected ? 'text-emerald-500' : 'theme-muted'}`}>{network.connected ? 'Connected' : 'Disconnected'}</span></div></div>)}
+      </div>
+    </div>
+
+    <div className="studio-card rounded-2xl p-3 flex flex-col gap-2 flex-1 min-w-0">
+      <div className="flex items-center justify-between border-b border-black/5 dark:border-slate-800 pb-1.5"><div className="flex items-center gap-1.5"><span className="w-6 h-6 rounded-md theme-badge-primary flex items-center justify-center"><Plug2 className="w-3.5 h-3.5" /></span><span className="font-bold text-xs theme-title">{peripheralsTitle}</span></div><span className="text-[10px] font-mono font-bold theme-muted">{telemetry.peripherals.length}</span></div>
+      {truncationNotices.map((item, index) => <p key={`${item.code}-${index}`} className="text-[10px] text-amber-600">{item.message || 'Device list was truncated by the provider.'}</p>)}
+      <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[240px] pr-1">
+        {telemetry.peripherals.length === 0 && <p className="text-[11px] theme-muted">No present display, input, or audio device was reported.</p>}
+        {telemetry.peripherals.map((device) => <button type="button" key={device.id} onClick={() => onInspect(device.id)} className="theme-chip-box p-2 rounded-xl flex items-center justify-between gap-2 cursor-pointer text-left min-w-0"><span className="flex items-center gap-2 min-w-0"><span className="w-5 h-5 rounded-md theme-badge-primary flex items-center justify-center shrink-0">{deviceIcon(device.icon)}</span><span className="min-w-0"><span className="block text-[11px] font-bold theme-title break-words">{device.name}</span><span className="block text-[9px] font-mono theme-muted truncate">{device.detail}</span></span></span><span className="text-[10px] font-mono theme-primary-text font-bold shrink-0 max-w-24 truncate">{device.spec}</span></button>)}
+      </div>
+    </div>
+  </section>
+}

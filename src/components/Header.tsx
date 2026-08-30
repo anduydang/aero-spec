@@ -1,16 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import {
   Bot,
   Cpu,
-  Globe,
-  Palette,
   Radio,
   Settings,
   SlidersHorizontal,
   Sparkles,
   Target,
-  Volume2,
-  VolumeX,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 
@@ -23,7 +19,7 @@ import type {
 } from '../types/hardware'
 import { i18nData } from '../data/i18nData'
 import { soundFx } from '../utils/soundFx'
-import { ThemePicker } from './ThemePicker'
+import { SettingsPopover } from './SettingsPopover'
 
 interface HeaderProps {
   hostName: string
@@ -39,6 +35,7 @@ interface HeaderProps {
   onSelectRig: (rig: RigProfileType) => void
   onOpenFlexCard: () => void
   onOpenAiAdvisor: () => void
+  onRefreshHardware: () => void
 }
 
 function getStatusCopy(metadata: TelemetryMetadata, lang: LanguageType) {
@@ -50,6 +47,9 @@ function getStatusCopy(metadata: TelemetryMetadata, lang: LanguageType) {
   }
   if (metadata.status === 'scanning') {
     return { label: lang === 'EN' ? 'Scanning hardware' : 'Đang quét phần cứng', tone: 'sky' }
+  }
+  if (metadata.status === 'partial') {
+    return { label: lang === 'EN' ? 'Live partial' : 'Nhận diện một phần', tone: 'amber' }
   }
   if (metadata.status === 'error') {
     return { label: lang === 'EN' ? 'Live scan error' : 'Lỗi quét máy thật', tone: 'rose' }
@@ -71,6 +71,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectRig,
   onOpenFlexCard,
   onOpenAiAdvisor,
+  onRefreshHardware,
 }) => {
   const dict = i18nData[lang]
   const [isMuted, setIsMuted] = useState(() => soundFx.isMuted())
@@ -84,21 +85,9 @@ export const Header: React.FC<HeaderProps> = ({
     rose: 'bg-rose-500/15 text-rose-500 border-rose-500/30',
     slate: 'bg-slate-500/15 theme-muted border-slate-500/30',
   }[status.tone]
-
-  useEffect(() => {
-    if (!isSettingsOpen) return
-    const closeSettings = (event: MouseEvent | KeyboardEvent) => {
-      if (event instanceof KeyboardEvent && event.key !== 'Escape') return
-      if (event instanceof MouseEvent && settingsRef.current?.contains(event.target as Node)) return
-      setIsSettingsOpen(false)
-    }
-    document.addEventListener('mousedown', closeSettings)
-    document.addEventListener('keydown', closeSettings)
-    return () => {
-      document.removeEventListener('mousedown', closeSettings)
-      document.removeEventListener('keydown', closeSettings)
-    }
-  }, [isSettingsOpen])
+  const providerBadges = Object.entries(telemetryStatus.providers ?? {}).flatMap(([provider, state]) =>
+    state?.badge ? [{ provider, badge: state.badge }] : [],
+  )
 
   const handleExportClick = () => {
     soundFx.playChime()
@@ -129,11 +118,20 @@ export const Header: React.FC<HeaderProps> = ({
             <h1 className="text-base font-black tracking-tight flex items-center gap-1 theme-title leading-none">
               AeroSpec <span className="theme-primary-text">Pro</span>
             </h1>
-            <span className="px-1.5 py-0.5 text-[10px] font-bold theme-badge-primary rounded-full font-mono">v2.6.0</span>
+            <span className="px-1.5 py-0.5 text-[10px] font-bold theme-badge-primary rounded-full font-mono">v2.6.1</span>
             <span className={`px-2 py-0.5 text-[10px] font-bold border rounded-full font-mono flex items-center gap-1 ${statusClasses}`}>
               <Radio className={`w-3 h-3 ${telemetryStatus.status === 'scanning' ? 'animate-pulse' : ''}`} />
               {status.label}
             </span>
+            {providerBadges.map(({ provider, badge }) => (
+              <span
+                key={provider}
+                title={`${provider} telemetry`}
+                className="px-2 py-0.5 text-[10px] font-bold border border-amber-500/30 rounded-full font-mono text-amber-600 dark:text-amber-300 bg-amber-500/10"
+              >
+                {badge}
+              </span>
+            ))}
           </div>
           <p className="text-xs theme-muted font-mono flex flex-wrap items-center gap-x-1.5 gap-y-0.5 mt-1 leading-tight">
             <span>Host: <strong className="theme-sub">{hostName}</strong></span>
@@ -212,49 +210,24 @@ export const Header: React.FC<HeaderProps> = ({
             <Settings className="w-4 h-4" />
           </button>
 
-          {isSettingsOpen && (
-            <div
-              id="app-settings-popover"
-              role="group"
-              aria-label="Display and app settings"
-              className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-80 max-w-[calc(100vw-2rem)] studio-card rounded-2xl p-3 flex flex-col gap-3 shadow-2xl"
-            >
-              <div className="flex flex-col gap-2 text-xs font-bold theme-title">
-                <span className="flex items-center gap-1.5"><Palette className="w-3.5 h-3.5 text-amber-500" /> Theme</span>
-                <ThemePicker
-                  theme={theme}
-                  lang={lang}
-                  onSelectTheme={(nextTheme) => {
-                    soundFx.playSwitch()
-                    onSelectTheme(nextTheme)
-                  }}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  aria-label={lang === 'EN' ? 'Language: English' : 'Language: Vietnamese'}
-                  onClick={() => {
-                    soundFx.playSwitch()
-                    onToggleLang()
-                  }}
-                  className="theme-chip-box rounded-xl px-2.5 py-2 text-xs font-bold theme-title flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Globe className="w-3.5 h-3.5" /> {lang}
-                </button>
-                <button
-                  type="button"
-                  aria-label={isMuted ? 'Sound: muted' : 'Sound: on'}
-                  onClick={handleToggleSound}
-                  className="theme-chip-box rounded-xl px-2.5 py-2 text-xs font-bold theme-title flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-                  {isMuted ? 'Muted' : 'Sound'}
-                </button>
-              </div>
-            </div>
-          )}
+          <SettingsPopover
+            isOpen={isSettingsOpen}
+            triggerRef={settingsRef}
+            lang={lang}
+            theme={theme}
+            isMuted={isMuted}
+            onClose={() => setIsSettingsOpen(false)}
+            onToggleLang={() => {
+              soundFx.playSwitch()
+              onToggleLang()
+            }}
+            onSelectTheme={(nextTheme) => {
+              soundFx.playSwitch()
+              onSelectTheme(nextTheme)
+            }}
+            onToggleSound={handleToggleSound}
+            onRefreshHardware={onRefreshHardware}
+          />
         </div>
       </div>
     </header>

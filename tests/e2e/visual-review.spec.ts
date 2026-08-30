@@ -21,7 +21,7 @@ test('switches through all five themes from settings', async ({ page }) => {
   ] as const
 
   for (const [theme, name] of themes) {
-    await page.getByRole('button', { name: 'Settings' }).click()
+    await page.getByRole('button', { name: 'Settings', exact: true }).click()
     const radio = page.getByRole('radio', { name: new RegExp(name, 'i') })
     await radio.focus()
     await page.keyboard.press('Space')
@@ -31,9 +31,9 @@ test('switches through all five themes from settings', async ({ page }) => {
     await expect.poll(() => page.evaluate(() => localStorage.getItem('aerospec_theme'))).toBe(theme)
 
     await page.reload()
-    await page.getByRole('button', { name: 'Settings' }).click()
+    await page.getByRole('button', { name: 'Settings', exact: true }).click()
     await expect(page.getByRole('radio', { name: new RegExp(name, 'i') })).toBeChecked()
-    await page.getByRole('button', { name: 'Settings' }).click()
+    await page.keyboard.press('Escape')
   }
 })
 
@@ -42,10 +42,10 @@ test('captures dashboard theme baselines', async ({ page }, testInfo) => {
   await expect(page.getByText('Simulation', { exact: true })).toBeVisible()
   await expect(page).toHaveScreenshot('dashboard-obsidian.png', { animations: 'disabled' })
 
-  await page.getByRole('button', { name: 'Settings' }).click()
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
   await page.getByRole('radio', { name: /Blueprint Lab/i }).focus()
   await page.keyboard.press('Space')
-  await page.getByRole('button', { name: 'Settings' }).click()
+  await page.keyboard.press('Escape')
   await expect(page).toHaveScreenshot('dashboard-blueprint.png', { animations: 'disabled' })
 
   if (testInfo.project.name === 'edge-1440') {
@@ -54,10 +54,10 @@ test('captures dashboard theme baselines', async ({ page }, testInfo) => {
       ['Industrial Amber', 'dashboard-industrial.png'],
       ['Neo Tokyo', 'dashboard-tokyo.png'],
     ] as const) {
-      await page.getByRole('button', { name: 'Settings' }).click()
+      await page.getByRole('button', { name: 'Settings', exact: true }).click()
       await page.getByRole('radio', { name: new RegExp(name, 'i') }).focus()
       await page.keyboard.press('Space')
-      await page.getByRole('button', { name: 'Settings' }).click()
+      await page.keyboard.press('Escape')
       await expect(page).toHaveScreenshot(file, { animations: 'disabled' })
     }
   }
@@ -75,7 +75,7 @@ test('maintains readable semantic contrast in every theme', async ({ page }, tes
   ] as const
 
   for (const [name, id] of themes) {
-    await page.getByRole('button', { name: 'Settings' }).click()
+    await page.getByRole('button', { name: 'Settings', exact: true }).click()
     await page.getByRole('radio', { name: new RegExp(name, 'i') }).focus()
     await page.keyboard.press('Space')
 
@@ -115,14 +115,14 @@ test('maintains readable semantic contrast in every theme', async ({ page }, tes
     expect(ratios.button, `${id} button`).toBeGreaterThanOrEqual(4.5)
     expect(ratios.chipBoundary, `${id} chip boundary`).toBeGreaterThanOrEqual(3)
 
-    await page.getByRole('button', { name: 'Settings' }).click()
+    await page.keyboard.press('Escape')
   }
 })
 
 test('captures the visual theme picker', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'edge-1440', 'Theme picker baseline uses the review viewport')
-  await page.getByRole('button', { name: 'Settings' }).click()
-  const settings = page.getByRole('group', { name: 'Display and app settings' })
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
+  const settings = page.getByRole('dialog', { name: 'Display and app settings' })
   await expect(settings).toBeVisible()
   await expect(settings.getByRole('radiogroup', { name: 'Theme' })).toBeVisible()
   await expect(settings).toHaveScreenshot('theme-picker-obsidian.png', { animations: 'disabled' })
@@ -131,10 +131,10 @@ test('captures the visual theme picker', async ({ page }, testInfo) => {
 test('captures and keyboard-checks AI, inspector, and Flex overlays', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'edge-1440', 'Overlay baselines use the review viewport')
   await page.locator('select[aria-label="Hardware profile"]').selectOption('full')
-  await page.getByRole('button', { name: 'Settings' }).click()
+  await page.getByRole('button', { name: 'Settings', exact: true }).click()
   await page.getByRole('radio', { name: /Blueprint Lab/i }).focus()
   await page.keyboard.press('Space')
-  await page.getByRole('button', { name: 'Settings' }).click()
+  await page.keyboard.press('Escape')
 
   const expectSemanticPanel = async (dialog: ReturnType<typeof page.getByRole>) => {
     await expect(dialog).toHaveClass(/overlay-panel/)

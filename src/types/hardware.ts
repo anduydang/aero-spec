@@ -1,9 +1,20 @@
+import type { DataSource, ProviderDiagnostic, ProviderId, SectionStatus } from './nativeTelemetry'
+
 export type PersonaType = 'dev' | 'creator' | 'esports' | 'silent';
 export type RigProfileType = 'live' | 'full' | 'missing';
 export type LanguageType = 'EN' | 'VI';
 export type ThemeType = 'obsidian' | 'blueprint' | 'terminal' | 'industrial' | 'tokyo';
 export type TelemetryMode = 'live' | 'simulated';
-export type DetectionStatus = 'scanning' | 'ready' | 'unavailable' | 'error';
+export type DetectionStatus = 'scanning' | 'ready' | 'partial' | 'unavailable' | 'error';
+export type TelemetryFreshness = 'fresh' | 'stale' | 'unavailable';
+
+export interface TelemetryProviderState {
+  freshness: TelemetryFreshness;
+  ageSeconds: number;
+  source: DataSource;
+  badge?: string;
+  diagnostic?: ProviderDiagnostic;
+}
 
 export interface TelemetryCapabilities {
   cpuIdentity: boolean;
@@ -27,6 +38,42 @@ export interface TelemetryMetadata {
   status: DetectionStatus;
   capabilities: TelemetryCapabilities;
   error?: string;
+  diagnostics?: ProviderDiagnostic[];
+  providers?: Partial<Record<ProviderId, TelemetryProviderState>>;
+}
+
+export interface SourcedHardwareItem {
+  source: DataSource;
+  status: SectionStatus;
+  diagnostics: ProviderDiagnostic[];
+}
+
+export interface HardwareStorageDevice extends SourcedHardwareItem {
+  localId: string;
+  name: string;
+  capacityBytes: number;
+  capacityLabel: string;
+  mediaType: 'ssd' | 'hdd' | 'unspecified';
+  busType: string;
+  health: 'healthy' | 'warning' | 'unhealthy' | 'unknown';
+  operationalStatus: string[];
+}
+
+export interface HardwareNetworkDevice extends SourcedHardwareItem {
+  localId: string;
+  name: string;
+  interfaceName?: string;
+  linkSpeedBps?: number;
+  mediaType?: string;
+  connected: boolean;
+}
+
+export interface HardwareConnectedDevice extends SourcedHardwareItem {
+  localId: string;
+  name: string;
+  type: 'display' | 'mouse' | 'keyboard' | 'audio';
+  manufacturer?: string;
+  deviceStatus?: string;
 }
 
 export interface NativeHardwareTelemetryPayload {
@@ -155,7 +202,7 @@ export interface HardwareTelemetryState {
     voltageV: number;
     slotTopology: string;
     isSingleChannel: boolean;
-    slots: { slot: string; size: string; status: 'active' | 'empty'; label?: string }[];
+    slots: { slot: string; size: string; status: 'active' | 'empty'; label?: string; partNumber?: string; source?: DataSource }[];
   };
   motherboard: {
     name: string;
@@ -173,6 +220,7 @@ export interface HardwareTelemetryState {
     };
   };
   storage: {
+    devices?: HardwareStorageDevice[];
     m2_1: {
       name: string;
       lane: string;
@@ -219,6 +267,7 @@ export interface HardwareTelemetryState {
     loadPct: number;
     rail12v: number;
     zeroRpm: boolean;
+    provenance?: 'manual' | 'simulator' | 'unavailable';
   };
   network: {
     name: string;
@@ -227,6 +276,12 @@ export interface HardwareTelemetryState {
     pingMs: number;
     rssi: string;
     lanName: string;
+  };
+  networks?: HardwareNetworkDevice[];
+  connectedDevices?: {
+    display: HardwareConnectedDevice[];
+    input: HardwareConnectedDevice[];
+    audio: HardwareConnectedDevice[];
   };
   peripherals: {
     id: string;

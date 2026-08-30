@@ -41,7 +41,7 @@ describe('buildAdvisorContext', () => {
     })
     const context = buildAdvisorContext(telemetry, calculateHardwareSynergyScore(telemetry, 'creator'))
 
-    expect(context).toContain('Host: WORKSTATION-01')
+    expect(context).not.toContain('WORKSTATION-01')
     expect(context).toContain('CPU: AMD Ryzen 7 9700X (8C/16T)')
     expect(context).toContain('CPU load: 23%')
     expect(context).toContain('RAM: 32GB Dual-Channel (inferred)')

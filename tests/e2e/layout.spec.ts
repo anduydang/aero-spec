@@ -23,11 +23,21 @@ test('migrates a legacy stored theme to the matching new identity', async ({ pag
 
 test('keeps secondary controls in a settings popover', async ({ page }) => {
   const settingsButton = page.getByRole('button', { name: 'Settings' })
+  const settingsPanel = page.getByRole('dialog', { name: 'Display and app settings' })
 
   await expect(settingsButton).toBeVisible()
-  await expect(page.getByRole('group', { name: 'Display and app settings' })).toHaveCount(0)
+  await expect(settingsPanel).toHaveCount(0)
   await settingsButton.click()
-  await expect(page.getByRole('group', { name: 'Display and app settings' })).toBeVisible()
+  await expect(settingsPanel).toBeVisible()
+  await expect(settingsPanel).toHaveCSS('position', 'fixed')
+  const panelBox = await settingsPanel.boundingBox()
+  const viewport = page.viewportSize()
+  expect(panelBox).not.toBeNull()
+  expect(viewport).not.toBeNull()
+  expect(panelBox!.x).toBeGreaterThanOrEqual(0)
+  expect(panelBox!.y).toBeGreaterThanOrEqual(0)
+  expect(panelBox!.x + panelBox!.width).toBeLessThanOrEqual(viewport!.width)
+  expect(panelBox!.y + panelBox!.height).toBeLessThanOrEqual(viewport!.height)
   await expect(page.getByRole('radiogroup', { name: 'Theme' })).toBeVisible()
   await expect(page.getByRole('button', { name: /language/i })).toBeVisible()
   await expect(page.getByRole('button', { name: /sound/i })).toBeVisible()

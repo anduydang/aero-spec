@@ -11,7 +11,7 @@
 
 **A modern, aesthetic, high-performance desktop hardware architecture analyzer, interactive PCB schematic visualizer, and AI upgrade consultant.**
 
-[📥 Download Latest Release](#-download--release-binaries) • [✨ Key Features](#-key-features) • [🎨 Aesthetic Themes](#-5-aesthetic-studio-themes) • [🛠️ Tech Stack](#-technical-architecture) • [🚀 Development](#-development--build)
+[📦 Cài đặt Windows](#-cài-đặt-windows) • [✨ Key Features](#-key-features) • [🎨 Aesthetic Themes](#-5-aesthetic-studio-themes) • [🛠️ Tech Stack](#-technical-architecture) • [🚀 Development](#-development--build)
 
 </div>
 
@@ -25,12 +25,16 @@
 
 ## ✨ Key Features (Tính Năng Thực Tế)
 
-### 1. ⚡ Real Hardware Telemetry Probe (Rust + WMI)
-- **Tự động quét cấu hình thực tế**: Thu thập thông số phần cứng trực tiếp từ hệ điều hành thông qua lệnh `sysinfo` và `WMI / Registry` ở tầng native Rust.
-- **CPU & Core Loads**: Hiển thị xung nhịp trung bình, nhiệt độ nhân, điện áp VCore, công suất tiêu thụ (W) và mức tải thời gian thực của từng nhân CPU (Grid thích ứng theo số nhân).
-- **RAM & Channel Topology**: Nhận diện dung lượng, bus RAM, độ trễ Primary Timings, xung nhịp Infinity Fabric (FCLK) và cảnh báo nghẽn băng thông khi chạy **Single-Channel**.
-- **Motherboard & BIOS**: Hiển thị tên hãng bo mạch, Chipset, phiên bản BIOS, nhà cung cấp và ngày phát hành BIOS.
-- **GPU & Storage**: Phân biệt GPU rời / iGPU tích hợp, tốc độ đọc ổ đĩa NVMe/SATA và nhiệt độ hoạt động.
+### 1. ⚡ Real Hardware Inventory & Telemetry (Windows + NVIDIA)
+- **Windows inventory**: đọc CPU, bo mạch chủ/BIOS, từng DIMM, display adapter, ổ đĩa vật lý và trạng thái sức khỏe, card mạng vật lý đang hoạt động, màn hình, bàn phím, thiết bị trỏ và audio qua Windows PowerShell, CIM, Storage và PnP API.
+- **Windows dynamic data**: đọc các chỉ số tải mà Windows cung cấp; mỗi nhóm dữ liệu có trạng thái nguồn riêng và dữ liệu không có sẽ được hiển thị là không khả dụng, không tự điền bằng dữ liệu giả.
+- **NVIDIA telemetry**: khi driver NVIDIA có `nvidia-smi` hợp lệ, AeroSpec dùng nó cho VRAM, phiên bản driver, nhiệt độ GPU, mức tải, công suất, xung đồ họa và tốc độ quạt mà driver thực sự báo cáo.
+
+#### Giới hạn dữ liệu
+- **PSU không thể tự nhận diện đáng tin cậy** trên máy Windows phổ thông. Người dùng có thể nhập hồ sơ PSU cục bộ; mọi giá trị này được gắn nhãn `Manual` và AeroSpec không suy đoán model/công suất từ mức tiêu thụ hệ thống.
+- **Nhiệt độ CPU/package/core, VCore, điện áp bo mạch và tốc độ quạt mainboard** không có nguồn Windows chuẩn, đáng tin cậy trên mọi máy nên hiện chưa được hỗ trợ. Trường không có dữ liệu vẫn để `Unavailable`.
+- AeroSpec không cài sensor helper, service, scheduled task hay kernel driver, và không yêu cầu nâng quyền quản trị. Vì vậy một số dữ liệu phụ thuộc vào phiên bản Windows, quyền đọc và driver phần cứng đang cài.
+- Máy không có NVIDIA hoặc driver không hỗ trợ trường nào đó vẫn dùng inventory Windows bình thường; phần NVIDIA tương ứng được đánh dấu không hỗ trợ/không khả dụng.
 
 ### 2. 🔬 Interactive PCB Schematic Canvas
 - Trực quan hóa bo mạch chủ và các linh kiện (Socket CPU, Khe RAM DIMM, VRM Heatsink, Khe cắm M.2 / SATA, Bus PCIe x16) bằng canvas vector sắc nét.
@@ -39,7 +43,7 @@
 
 ### 3. 🩺 AI Hardware Upgrade Advisor (Gemini 3.7 & 3.5 Flash)
 - **Kết nối AI thật**: Tích hợp Google Gemini API với cơ chế ưu tiên cascade (`gemini-3.7-flash` $\rightarrow$ `gemini-3.5-flash` $\rightarrow$ `gemini-3.1-flash-lite`).
-- **Nạp Telemetry máy thật làm Context**: AI tự động đọc toàn bộ cấu hình máy của người dùng (tên CPU, giới hạn nguồn PSU, loại socket, khe RAM trống...) để đưa ra lời khuyên tương thích chính xác 100%.
+- **Nạp dữ liệu phần cứng làm context**: AI chỉ nhận các trường phần cứng không định danh được cho phép; PSU chỉ được đưa vào khi người dùng tự nhập. Khuyến nghị là thông tin tham khảo và cần được kiểm tra lại với tài liệu nhà sản xuất trước khi nâng cấp.
 - **Rich Markdown Engine**: Hiển thị câu trả lời dạng bảng so sánh giá (VND/USD), khối mã, danh sách hành động và nhãn in đậm bắt mắt.
 
 ### 4. 📊 Dynamic Hardware Synergy & Bottleneck Scoring (0 - 100)
@@ -70,14 +74,16 @@
 
 ---
 
-## 📥 Download & Release Binaries
+## 📦 Cài đặt Windows
 
-Các bản build mới nhất luôn sẵn sàng trong thư mục `release_binaries/`:
+AeroSpec được đóng gói dưới dạng **NSIS Setup cho người dùng hiện tại** (`currentUser`):
 
-| Bản cài đặt | File thực thi | Dung lượng | Hướng dẫn |
-| :--- | :--- | :--- | :--- |
-| **Bản Portable (Khuyên dùng)** | [`AeroSpec_Pro_Portable.exe`](release_binaries/AeroSpec_Pro_Portable.exe) | `~9.4 MB` | Tải về nhấp đúp chạy ngay, không cần cài đặt. |
-| **Bản Installer** | [`AeroSpec_Pro_Setup.exe`](release_binaries/AeroSpec_Pro_Setup.exe) | `~2.1 MB` | Bộ cài đặt chuẩn Windows (tạo shortcut Desktop & Start Menu). |
+- Cài đặt và chạy app bằng tài khoản Windows thông thường, không yêu cầu quyền Administrator.
+- Bộ cài không triển khai sidecar, .NET runtime, sensor helper, service, scheduled task hay kernel driver.
+- Bản personal build hiện **chưa ký số**, nên Windows SmartScreen có thể hiện cảnh báo. Chỉ tiếp tục khi file đến từ nguồn bạn tin cậy và checksum khớp với bản phát hành.
+- Gỡ cài đặt bằng **Settings → Apps → Installed apps** trong chính tài khoản đã cài.
+
+Repo không cam kết có sẵn executable dựng trước. Sau khi chạy lệnh build bên dưới, NSIS Setup được tạo trong `src-tauri/target/release/bundle/nsis/`; hãy dùng đúng tên file mà Tauri xuất ra cho phiên bản `2.6.1`.
 
 ---
 
@@ -127,10 +133,10 @@ npm run dev
 npm run tauri dev
 ```
 
-### Đóng gói ứng dụng (.exe)
+### Đóng gói NSIS Setup (.exe)
 ```bash
-# Build binary release Portable & Setup
-npx @tauri-apps/cli build
+# Chỉ tạo NSIS Setup current-user theo src-tauri/tauri.conf.json
+npx tauri build --bundles nsis
 ```
 
 ---

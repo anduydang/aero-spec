@@ -299,8 +299,42 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
 
           </div>
 
+          {storage.devices && storage.devices.length > 0 && (
+            <div data-testid="detected-storage-list" className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-2.5 z-10">
+              {storage.devices.map((device, index) => (
+                <div
+                  role="button" tabIndex={0}
+                  key={device.localId}
+                  ref={index === 0 ? nodeNvme1Ref : index === 1 ? nodeNvme2Ref : undefined}
+                  onClick={() => onInspect(`storage:${device.localId}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      onInspect(`storage:${device.localId}`)
+                    }
+                  }}
+                  className="theme-chip-box transition p-2.5 rounded-xl tactile-chip cursor-pointer group text-left min-w-0"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider theme-muted flex items-center gap-1">
+                      <HardDrive className="w-3 h-3 theme-primary-text" /> DISK #{index + 1}
+                    </span>
+                    <span className={`text-[8px] font-mono font-bold px-1 py-0.5 rounded ${device.health === 'healthy' ? 'bg-emerald-500/20 text-emerald-600' : device.health === 'warning' ? 'bg-amber-500/20 text-amber-600' : 'theme-badge-primary'}`}>
+                      {device.health.toUpperCase()}
+                    </span>
+                  </div>
+                  <h4 className="text-[11px] font-bold theme-title group-hover:theme-primary-text break-words mt-1">{device.name}</h4>
+                  <div className="flex justify-between gap-2 text-[9px] font-mono theme-muted mt-1">
+                    <span>{device.busType} · {device.mediaType.toUpperCase()}</span>
+                    <span className="theme-primary-text font-bold shrink-0">{device.capacityLabel}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* MIDDLE ROW: Storage Bays (M.2 & SATA) */}
-          <div className="grid grid-cols-12 gap-2.5 z-10">
+          {(!storage.devices || storage.devices.length === 0) && <div className="grid grid-cols-12 gap-2.5 z-10">
             
             {/* Primary Disk M.2_1 */}
             <motion.div 
@@ -360,7 +394,7 @@ export const MotherboardSchematic: React.FC<MotherboardSchematicProps> = ({
               <span className="text-[8px] theme-muted font-mono">[Available for Upgrade]</span>
             </div>
 
-          </div>
+          </div>}
 
           {/* BOTTOM ROW: Graphics Engine Card (PCIe / iGPU) */}
           <motion.div 
